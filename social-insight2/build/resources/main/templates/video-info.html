@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>YouTube Video Info</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<h1>YouTube Video Information</h1>
+<div>
+  <h2>Title: <span th:text="${video.title}"></span></h2>
+  <p>Published At: <span th:text="${video.publishedAt}"></span></p>
+  <p>View Count: <span th:text="${video.viewCount}"></span></p>
+  <p>Like Count: <span th:text="${video.likeCount}"></span></p>
+
+  <h2>Extracted Keywords</h2>
+  <p>Title Keyword: <span th:text="${video.titleKeyword}"></span></p>
+  <p>Description Keyword: <span th:text="${video.descriptionKeyword}"></span></p>
+  <p>Most Common Comment Keyword: <span th:text="${video.commentKeyword}"></span></p>
+
+
+</div>
+</body>
+</html>

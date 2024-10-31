@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anchor</title>
+    <link rel="stylesheet" href="anchor.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Gasoek+One&family=Jua&family=Nanum+Brush+Script&family=Nanum+Gothic&family=Noto+Sans+KR:wght@100..900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- HEADER -->
+    <div class="header">
+        <div class="icon24 ico_menu" onclick="toggleMenu()"></div>
+        <div class="search">
+            <div class="icon24 ico_glass"></div>
+            <input type="text" placeholder="Search...">
+        </div>
+        <div class="credit">
+            <div class="icon24 ico_credit"></div>
+            <div class="txt_credit">999+</div>
+        </div>
+    </div>
+
+    <!-- CARDBOX -->
+    <div class="cardbox">
+        <!-- CHANNEL CARD -->
+        <div class="channel card">
+            <div class="channel-image"></div>
+            <div class="channel-info">
+                <div class="channel-name" id="txt_name_channel">집밥백선생</div>
+                <div class="channel-link" id="txt_link_channel">https...</div>
+                <table class="tbl_info-native">
+                    <tr>
+                        <th>채널 개설일</th>
+                        <td id="ymd_publish">2024.09.04</td>
+                    </tr>
+                    <tr>
+                        <th>구독자 수</th>
+                        <td id="num_subscriber">256K</td>
+                    </tr>
+                    <tr>
+                        <th>콘텐츠 수</th>
+                        <td id="num_content">128</td>
+                    </tr>
+                </table>
+                <table class="tbl_info-anchor">
+                    <tr>
+                        <th>최초 발견 일자</th>
+                        <td id="ymd_found_first">2024.09.01</td>
+                    </tr>
+                    <tr>
+                        <th>마지막 발견</th>
+                        <td id="txt_found_last">6시간 32분 전</td>
+                    </tr>
+                    <tr>
+                        <th>ANCHOR</th>
+                        <td id="num_anchorer">3</td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- CARD DECK -->
+        <div class="deck">
+            <div class="card" id="pie"></div>
+            <div class="card"></div>
+            <div class="card"></div>
+            <div class="card"></div>
+        </div>
+
+        <!-- COMMUNITY -->
+        <div class="community">
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+    </div>
+</body>
+
+</html>

@@ -69,8 +69,8 @@ def analyze_comments_sentiment(comments):
     return sentiment_scores
 
   
-@app.route('/respond', methods=['POST'])
-def respond_request():
+@app.route('/respond', methods=['POST'])                # main server와 연결 함수 이부분에 추가
+def respond_request():    
     json_data = request.get_json()
 
     if 'title' in json_data and 'description' in json_data and 'comments' in json_data:

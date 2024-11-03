@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anchor</title>
-    <link rel="stylesheet" href="/anchor.css">
+    <link rel="stylesheet" href="anchor.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -99,27 +99,22 @@
         // 예: 검색 페이지로 이동
         //window.location.href = '/search';
 
-        // API 호출하여 새로운 데이터를 가져옴
-        fetch(`/api/search?query=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data && Array.isArray(data)) {
-                    const newData = data.map(item => item.score);
-                    const newLabels = data.map(item => item.contentKeyword);
+        // Thymeleaf를 통해 데이터를 가져와 JavaScript 변수에 할당
+        let chartData = /*[[${commentPieList}]]*/ {};
+        let data = [];
+        let labels = [];
 
-                    // 차트 그리기
-                    drawPieChart(newData, newLabels);
-                } else {
-                    console.error('잘못된 데이터 형식:', data);
-                    // 오류 처리: 기본 데이터 사용
-                    drawPieChart(defaultData, defaultLabels);
-                }
-            })
-            .catch(error => {
-                console.error('데이터 가져오기 오류:', error);
-                // 오류 처리: 기본 데이터 사용
-                drawPieChart(defaultData, defaultLabels);
-            });
+        let len = Math.min(chartData.length, 8);
+        if (chartData && Array.isArray(chartData) && chartData.length > 0) {
+            for (let i = 0; i < len; i++) {
+                data.push(chartData[i].contentKeyword);
+                labels.push(chartData[i].score);
+            }
+        }
+        else {
+            data = defaultData;
+            labels = defaultLabels;
+        }
     }
 </script>
 
@@ -193,23 +188,8 @@
         "Purple"
     ];
 
-    // Thymeleaf를 통해 데이터를 가져와 JavaScript 변수에 할당
-    let chartData = /*[[${commentPieList}]]*/ {};
-    let data = [];
-    let labels = [];
-
-    let len = Math.min(chartData.length, 8);
-    if (chartData) {
-        for (let i = 0; i < len; i++) {
-            data.push(chartData[i].contentKeyword);
-            labels.push(chartData[i].score);
-        }
-    }
-    else {
-        data = defaultData;
-        labels = defaultLabels;
-    }
-
+    let data = defaultData;
+    let labels = defaultLabels;
 
     // 페이지 로드 시 차트 그리기
     window.onload = function () {

@@ -74,7 +74,7 @@
         <div class="deck">
             <div class="card" id="pie">
                 <canvas id="pieChart" width="200" height="200"></canvas>
-                <div id="pieLegend" class="legend"></div> <!-- 범례 영역 -->
+                <div id="pieLegend" class="legend"></div>
             </div>
             <div class="card"></div>
             <div class="card"></div>
@@ -98,6 +98,28 @@
         console.log("검색어:", query); // 검색어 출력 (테스트용)
         // 예: 검색 페이지로 이동
         //window.location.href = '/search';
+
+        // API 호출하여 새로운 데이터를 가져옴
+        fetch(`/api/search?query=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && Array.isArray(data)) {
+                    const newData = data.map(item => item.score);
+                    const newLabels = data.map(item => item.contentKeyword);
+
+                    // 차트 그리기
+                    drawPieChart(newData, newLabels);
+                } else {
+                    console.error('잘못된 데이터 형식:', data);
+                    // 오류 처리: 기본 데이터 사용
+                    drawPieChart(defaultData, defaultLabels);
+                }
+            })
+            .catch(error => {
+                console.error('데이터 가져오기 오류:', error);
+                // 오류 처리: 기본 데이터 사용
+                drawPieChart(defaultData, defaultLabels);
+            });
     }
 </script>
 
@@ -172,9 +194,22 @@
     ];
 
     // Thymeleaf를 통해 데이터를 가져와 JavaScript 변수에 할당
-    let chartData = /*[[${commentPie}]]*/ {};
-    let data = chartData ? chartData.data : defaultData;
-    let labels = chartData ? chartData.labels : defaultLabels;
+    let chartData = /*[[${commentPieList}]]*/ {};
+    let data = [];
+    let labels = [];
+
+    let len = Math.min(chartData.length, 8);
+    if (chartData) {
+        for (let i = 0; i < len; i++) {
+            data.push(chartData[i].contentKeyword);
+            labels.push(chartData[i].score);
+        }
+    }
+    else {
+        data = defaultData;
+        labels = defaultLabels;
+    }
+
 
     // 페이지 로드 시 차트 그리기
     window.onload = function () {

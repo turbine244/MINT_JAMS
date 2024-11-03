@@ -18,8 +18,5 @@ public class VideoDataDTO {
     private String viewCount;
     private String likeCount;
 
-    private String titleKeyword;
-    private String descriptionKeyword;
-    private String commentKeyword;
 
 }

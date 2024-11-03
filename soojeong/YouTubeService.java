@@ -66,19 +66,24 @@ public void getCommentKeywordData(String searchChannelUrl, String apiKey) {
         JsonObject commentObject = commentElement.getAsJsonObject();
         JsonArray comments = commentObject.getAsJsonArray("items");
 
-        // 4. textOriginal만 추출하여 JSON 파일로 저장
-        JsonArray originalComments = new JsonArray(); // textOriginal을 담을 JSON 배열
-        for (JsonElement item : comments) {
-            JsonObject snippet = item.getAsJsonObject().getAsJsonObject("snippet");
-            String textOriginal = snippet.getAsJsonObject("topLevelComment").getAsJsonObject("snippet").get("textOriginal").getAsString();
-            originalComments.add(textOriginal);
-        }
-
-        // 결과를 JSON 형태로 저장
+        // 4. JSON 파일로 저장 (간소화된 구조)
         try (FileWriter fileWriter = new FileWriter("comments.json")) {
+            JsonArray commentsArray = new JsonArray();
+
+            for (JsonElement item : comments) {
+                String textOriginal = item.getAsJsonObject().getAsJsonObject("snippet")
+                        .getAsJsonObject("topLevelComment").getAsJsonObject("snippet").get("textOriginal").getAsString();
+                commentsArray.add(textOriginal); // textOriginal 값만 추가
+            }
+
+            // 최종 결과를 포함하는 JSON 객체
+            JsonObject output = new JsonObject();
+            output.add("comments", commentsArray);
+            
+            // JSON을 파일에 작성
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            gson.toJson(originalComments, fileWriter);
-            System.out.println("Original comments saved to comments.json");
+            gson.toJson(output, fileWriter);
+            System.out.println("Comments saved to comments.json");
         }
 
     } catch (Exception e) {

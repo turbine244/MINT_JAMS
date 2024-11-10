@@ -24,7 +24,7 @@ def translate_korean_to_english(text):
 
 
 def extract_keywords(text, lang='en', num_keywords=1):
-    keyword_extractor = yake.KeywordExtractor(lan=lang)
+    keyword_extractor = yake.KeywordExtractor(lan=lang, n=1)
     keywords = keyword_extractor.extract_keywords(text)
     return keywords[:num_keywords]
 
@@ -36,42 +36,50 @@ def normalize_keyword(keyword):
     return ' '.join(normalized)  # 기본형 단어들로 변환
 
 
-def keyword_process(json_data):
-    # title 언어 감지 및 키워드 추출
-    title_lang = detect_language(json_data['title'])
-    title_keyword = extract_keywords(json_data['title'], lang=title_lang, num_keywords=1)
+def content_keyword_process(json_data):
+    combined_content = ' '.join(json_data['content'])  # 리스트를 문자열로 결합
+    content_lang = detect_language(combined_content)
+    content_keywords = extract_keywords(combined_content, lang=content_lang, num_keywords=3)
 
-    # description 언어 감지 및 키워드 추출
-    description_lang = detect_language(json_data['description'])
-    description_keyword = extract_keywords(json_data['description'], lang=description_lang, num_keywords=1)
-    
-    # comments에서 개별적으로 키워드 추출 후 빈도 계산
-    comments_lang = detect_language(' '.join(json_data['comments']))
-    keyword_counter = Counter()
-    
-    for comment in json_data['comments']:
-        comment_keywords = extract_keywords(comment, lang=comments_lang, num_keywords=3)
-        for keyword, _ in comment_keywords:
-            normalized_keyword = normalize_keyword(keyword)  # 기본형으로 변환
-            keyword_counter[normalized_keyword] += 1
+    keyword_result = []
+    for keyword, _ in content_keywords:
+        if content_lang == 'ko':
+            keyword = normalize_keyword(keyword)  # 한국어 기본형 변환
+        keyword_result.append({"keyword": keyword, "found": 1})  # 'found' 값을 1로 설정
 
-    # 상위 n개의 키워드와 점수를 할당
-    top_comment_keywords = keyword_counter.most_common(100)
-    comment_keyword_result = [{'keyword': kw, 'frequency': freq} for kw, freq in top_comment_keywords]
-
-    # 결과를 딕셔너리 형식으로 저장
     keywords = {
-        'title_keyword': title_keyword[0][0] if title_keyword else None,
-        'description_keyword': description_keyword[0][0] if description_keyword else None,
-        'comment_keyword': comment_keyword_result
+        'keywords': keyword_result
     }
 
     return keywords
 
 
-def analyze_comments_sentiment(comments):
+def comment_keyword_process(json_data):
+    combined_comment = ' '.join(json_data['comment'])  # 리스트를 문자열로 결합
+    comment_lang = detect_language(combined_comment)
+    keyword_counter = Counter()
+    
+    for comment in json_data['comment']:
+        comment_keywords = extract_keywords(comment, lang=comment_lang, num_keywords=1)
+        for keyword, _ in comment_keywords:
+            if comment_lang == 'ko':
+                keyword = normalize_keyword(keyword)  # 기본형으로 변환
+            keyword_counter[keyword] += 1
+
+    #키워드와 점수를 할당
+    comment_keyword_result = [{'keyword': kw, 'found': fnd} for kw, fnd in keyword_counter.items()]
+
+    # 결과를 딕셔너리 형식으로 저장
+    keywords = {
+        'keywords': comment_keyword_result
+    }
+
+    return keywords
+
+
+def analyze_comments_sentiment(json_data):
     # 언어 감지
-    combined_comments = ' '.join(comments)
+    combined_comments = ' '.join(json_data['comment'])
     lang = detect_language(combined_comments)
     
     # VADER 분석기 초기화
@@ -87,34 +95,56 @@ def analyze_comments_sentiment(comments):
     
     return sentiment_scores
 
-  
-@app.route('/respond', methods=['POST'])                # main server와 연결 함수 이부분에 추가
-def respond_request():    
+
+@app.route('/respondK', methods=['POST'])                # main server와 연결 함수 이부분에 추가
+def respondK_request():    
     #데이터 받음
     json_data = request.get_json()
     if not json_data:
        return jsonify({"error": "Invalid JSON format."}), 400
 
-    # title, description, comments에서 키워드 추출
-    if 'title' in json_data and 'description' in json_data and 'comments' in json_data:
-        keywords = keyword_process(json_data)
+    # data에서 키워드 추출
+    if 'content' in json_data:
+        keywords = content_keyword_process(json_data)
         # 결과를 Spring Boot 서버에 전송
         sendToServer(keywords)
-        sentiment_scores = analyze_comments_sentiment(json_data['comments'])
+        return jsonify(keywords), 200
+    elif 'comment' in json_data:
+        keywords = comment_keyword_process(json_data)
+        # 결과를 Spring Boot 서버에 전송
+        sendToServer(keywords)
         return jsonify(keywords), 200
     else:
         return jsonify({'error': 'Invalid JSON format'}), 400
     
-# spring boot 서버로 전송하기    
-def sendToServer(keywords):
-    server_url = "http://localhost:8081/search"  # Spring Boot 서버 URL
-    response = requests.post(server_url, json=keywords)  # JSON 형식으로 전송       
 
-    #try:
+@app.route('/respondS', methods=['POST'])                # main server와 연결 함수 이부분에 추가
+def respondS_request():    
+    #데이터 받음
+    json_data = request.get_json()
+    if not json_data:
+       return jsonify({"error": "Invalid JSON format."}), 400
+
+    # data에서 키워드 추출
+    if 'data' in json_data:
+        sentiment_scores = analyze_comments_sentiment(json_data)
+        # 결과를 Spring Boot 서버에 전송
+        sendToServer(sentiment_scores)
+        return jsonify(sentiment_scores), 200
+    else:
+        return jsonify({'error': 'Invalid JSON format'}), 400
+    
+
+# spring boot 서버로 전송하기    
+def sendToServer(json_data):
+    server_url = "http://localhost:8081/search"  # Spring Boot 서버 URL
+    response = requests.post(server_url, json=json_data)  # JSON 형식으로 전송       
+
+    # try:
     #    response = requests.post(server_url, json=keywords)  # JSON 형식으로 전송
     #    if response.status_code != 200:
     #        print(f"Error sending data to Spring Boot server: {response.status_code}, {response.text}")
-    #except requests.exceptions.RequestException as e:
+    # except requests.exceptions.RequestException as e:
     #    print(f"Failed to send data to the database server: {e}")
 
 

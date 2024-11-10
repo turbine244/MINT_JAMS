@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en"  xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anchor</title>
+  <link rel="stylesheet" href="/css/anchor.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+          href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Gasoek+One&family=Jua&family=Nanum+Brush+Script&family=Nanum+Gothic&family=Noto+Sans+KR:wght@100..900&display=swap"
+          rel="stylesheet">
+</head>
+
+<body>
+<!-- HEADER -->
+<div class="header">
+  <div class="icon24 ico_menu" onclick="toggleMenu()"></div>
+  <div class="search">
+    <div class="icon24 ico_glass"></div>
+    <form action="/search" method="POST">
+      <input name="channelTitle" id="txt_name_target" type="text" placeholder="Search..."
+             onkeydown="if(event.key === 'Enter') searchFunction();" />
+    </form>
+  </div>
+  <div class="credit">
+    <div class="icon24 ico_credit"></div>
+    <div class="txt_credit">999+</div>
+  </div>
+</div>
+
+<!-- CARDBOX -->
+<div class="cardbox">
+  <!-- CHANNEL CARD -->
+  <div class="channel card">
+    <div class="channel-image"></div>
+    <div class="channel-info">
+      <div class="channel-name" id="txt_name_channel" th:text="${channel.channelTitle}"></div>
+      <div class="channel-link" id="txt_link_channel" th:text="${channel.channelUrl}"></div>
+      <table class="tbl_info-native">
+        <tr>
+          <th>채널 개설일</th>
+          <td id="ymd_publish" th:text="${channel.createdAt}"></td>
+        </tr>
+        <tr>
+          <th>구독자 수</th>
+          <td id="num_subscriber" th:text="${channel.subscriberCount}"></td>
+        </tr>
+        <tr>
+          <th>콘텐츠 수</th>
+          <td id="num_content" th:text="${channel.videoCount}"></td>
+        </tr>
+      </table>
+      <table class="tbl_info-anchor">
+        <tr>
+          <th>최초 발견 일자</th>
+          <td id="ymd_found_first">2999.99.99</td>
+        </tr>
+        <tr>
+          <th>마지막 발견</th>
+          <td id="txt_found_last">9시간 9분 전</td>
+        </tr>
+        <tr>
+          <th>ANCHOR</th>
+          <td id="num_anchorer">9</td>
+        </tr>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- CARD DECK -->
+  <div class="deck">
+    <div class="card" id="pie">
+      <canvas id="pieChart" width="200" height="200"></canvas>
+      <div id="pieLegend" class="legend"></div>
+    </div>
+    <div class="card"></div>
+    <div class="card"></div>
+    <div class="card"></div>
+  </div>
+
+  <!-- COMMUNITY -->
+  <div class="community">
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+</div>
+</body>
+
+
+<script>
+  function searchFunction() {
+      const query = document.getElementById("txt_name_target").value;
+      // 검색 기능 로직 추가 (예: API 호출 또는 검색 페이지로 이동)
+      console.log("검색어:", query); // 검색어 출력 (테스트용)
+      // 예: 검색 페이지로 이동
+      //window.location.href = '/search';
+  }
+</script>
+
+<script th:inline="javascript">
+  function drawPieChart(data, labels) {
+      const canvas = document.getElementById("pieChart");
+      const ctx = canvas.getContext("2d");
+
+      const colors = [
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56",
+          "#4BC0C0",
+          "#9966FF",
+          "#FF9F40",
+          "#3DC17C",
+          "#FF6699"
+      ];
+      const total = data.reduce((sum, value) => sum + value,
+          0);
+
+      let startAngle = 0;
+
+      // 파이 차트 그리기
+      data.forEach((value, index) => {
+          const sliceAngle = (value / total) * 2 * Math.PI;
+
+          // 파이 조각 채우기
+          ctx.beginPath();
+          ctx.moveTo(canvas.width / 2, canvas.height / 2);
+          ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, startAngle, startAngle + sliceAngle);
+          ctx.closePath();
+          ctx.fillStyle = colors[index
+          ];
+          ctx.fill();
+
+          startAngle += sliceAngle;
+      });
+
+      // 범례 추가
+      const legendContainer = document.getElementById("pieLegend");
+      legendContainer.innerHTML = ""; // 기존 범례 초기화
+
+      labels.forEach((label, index) => {
+          const legendItem = document.createElement("div");
+          legendItem.classList.add("legend-item");
+
+          const colorBox = document.createElement("span");
+          colorBox.classList.add("legend-color");
+          colorBox.style.backgroundColor = colors[index
+          ];
+
+          const legendText = document.createElement("span");
+          legendText.innerText = label;
+
+          legendItem.appendChild(colorBox);
+          legendItem.appendChild(legendText);
+          legendContainer.appendChild(legendItem);
+      });
+  }
+  // 데이터가 없을 때 기본값
+  const defaultData = [
+      10,
+      20,
+      30,
+      25,
+      15
+  ];
+  const defaultLabels = [
+      "Red",
+      "Blue",
+      "Yellow",
+      "Green",
+      "Purple"
+  ];
+
+  let data = defaultData;
+  let labels = defaultLabels;
+
+  // 페이지 로드 시 차트 그리기
+ window.onload = function () {
+      let chartData = [[${ commentPieList }]];
+      let data = [];
+      let labels = [];
+
+      let len = Math.min(chartData.length, 8);
+      for (let i = 0; i < len; i++) {
+          data.push(chartData[i].score);
+          labels.push(chartData[i].commentKeyword);
+
+          console.log("score:", chartData[i].score);
+          console.log("commentKeyword:", chartData[i].commentKeyword);
+      }
+
+      drawPieChart(data, labels);
+  }
+</script>
+
+</html>

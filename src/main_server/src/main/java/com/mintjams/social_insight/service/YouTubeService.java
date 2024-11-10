@@ -33,8 +33,7 @@ public class YouTubeService {
     @Autowired
     private final ContentKeywordRepository contentKeywordRepository;
 
-
-    //채널데이터 가져오기
+    // 채널데이터 가져오기
     public ChannelDTO getChannelData(String channelTitle, String apiKey) {
         ChannelDTO channelDTO = new ChannelDTO();
 
@@ -67,7 +66,8 @@ public class YouTubeService {
                 System.out.println("No channel found.");
                 return null;
             }
-            String channelId = channelItems.get(0).getAsJsonObject().getAsJsonObject("id").get("channelId").getAsString();
+            String channelId = channelItems.get(0).getAsJsonObject().getAsJsonObject("id").get("channelId")
+                    .getAsString();
 
             // 채널 상세 정보 가져오기 URL
             String channelInfoUrl = "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id="
@@ -105,7 +105,7 @@ public class YouTubeService {
                 String videoCount = channelStatistics.get("videoCount").getAsString(); // 동영상 수
 
                 //
-                //videoDataDTO.setVideoId(videoId);
+                // videoDataDTO.setVideoId(videoId);
 
                 // DTO에 데이터 설정
                 channelDTO.setChannelId(channelId);
@@ -123,86 +123,94 @@ public class YouTubeService {
             e.printStackTrace();
         }
 
-
         return channelDTO;
     }
 
+    // 분석 소요 파악
+    public long checkUpdate(String channelId, String apiKey) {
+        // 댓글 수 변화 측정
 
-    //키워드 데이터 DB에 저장
-    public void setKeywordData(String channelId, String apiKey) {
+        // 마지막 검사 단위로부터 100개 추가됐는지 측정
 
-        KeywordDTO keywordDTO = new KeywordDTO();
+        // 지금은 그냥 최근 영상 1개의 본문과 최근 100개 댓글 무조건 검사함
+        // 나중엔 큐에 넣어서 하겠지
+        String idContent = getLatestVideoId(channelId, apiKey);
+        JsonObject inputJson;
 
-        try {
-            CloseableHttpClient client = HttpClients.createDefault();
+        // 본문 분석
+        inputJson = get_data_content(channelId, apiKey, idContent);
+        setKeywordData(channelId, apiKey, idContent, false, inputJson);
 
-            // 1. 채널의 최신 동영상 가져오기
-            String latestVideoUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&channelId="
-                    + channelId + "&order=date&maxResults=1&key=" + apiKey;
+        // 댓글 분석
+        inputJson = get_data_comment(channelId, apiKey, idContent, 0);
+        setKeywordData(channelId, apiKey, idContent, true, inputJson);
 
-            HttpGet latestVideoRequest = new HttpGet(latestVideoUrl);
-            HttpResponse latestVideoResponse = client.execute(latestVideoRequest);
+        return 0;
+    }
+
+    // 본문 입력 json 뽑기
+    public JsonObject get_data_content(String channelId, String apiKey, String idContent) {
+        // YouTube API URL 설정 (비디오 정보 가져오기)
+        String videoUrl = "https://www.googleapis.com/youtube/v3/videos?part=snippet&id="
+                + idContent + "&key=" + apiKey;
+
+        // HttpClient 생성
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            // 비디오 정보 요청
+            HttpGet videoRequest = new HttpGet(videoUrl);
+            HttpResponse videoResponse = client.execute(videoRequest);
             BufferedReader videoReader = new BufferedReader(
-                    new InputStreamReader(latestVideoResponse.getEntity().getContent(), "UTF-8"));
-            StringBuilder latestVideoJsonResponse = new StringBuilder();
-            String videoLine;
+                    new InputStreamReader(videoResponse.getEntity().getContent(), "UTF-8"));
+            StringBuilder videoJsonResponse = new StringBuilder();
+            String line;
 
-            while ((videoLine = videoReader.readLine()) != null) {
-                latestVideoJsonResponse.append(videoLine);
+            // 응답 읽기
+            while ((line = videoReader.readLine()) != null) {
+                videoJsonResponse.append(line);
             }
             videoReader.close();
 
-            JsonElement latestVideoJsonElement = JsonParser.parseString(latestVideoJsonResponse.toString());
-            JsonObject latestVideoJsonObject = latestVideoJsonElement.getAsJsonObject();
-            JsonArray videoItems = latestVideoJsonObject.getAsJsonArray("items");
+            // JSON 응답 파싱
+            JsonObject videoJsonObject = JsonParser.parseString(videoJsonResponse.toString()).getAsJsonObject();
+            JsonArray videoItems = videoJsonObject.getAsJsonArray("items");
 
-            if (videoItems.size() == 0) {
-                System.out.println("No videos found.");
-            }
-            String videoId = videoItems.get(0).getAsJsonObject().getAsJsonObject("id").get("videoId").getAsString();
-
-            // 2. 동영상 세부 정보 가져오기
-            String videoInfoUrl = "https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id="
-                    + videoId + "&key=" + apiKey;
-
-            HttpGet videoRequest = new HttpGet(videoInfoUrl);
-            HttpResponse videoResponse = client.execute(videoRequest);
-            BufferedReader videoInfoReader = new BufferedReader(
-                    new InputStreamReader(videoResponse.getEntity().getContent(), "UTF-8"));
-            StringBuilder videoInfoJsonResponse = new StringBuilder();
-
-            while ((videoLine = videoInfoReader.readLine()) != null) {
-                videoInfoJsonResponse.append(videoLine);
-            }
-            videoInfoReader.close();
-
-            JsonElement videoJsonElement = JsonParser.parseString(videoInfoJsonResponse.toString());
-            JsonObject videoJsonObject = videoJsonElement.getAsJsonObject();
-            JsonArray videoInfoItems = videoJsonObject.getAsJsonArray("items");
-
-            JsonObject outputJson = new JsonObject();
-            if (videoInfoItems.size() > 0) {
-                JsonObject videoSnippet = videoInfoItems.get(0).getAsJsonObject().getAsJsonObject("snippet");
-                JsonObject videoStatistics = videoInfoItems.get(0).getAsJsonObject().getAsJsonObject("statistics");
-
+            if (videoItems.size() > 0) {
+                JsonObject videoSnippet = videoItems.get(0).getAsJsonObject().getAsJsonObject("snippet");
                 String title = videoSnippet.get("title").getAsString();
                 String description = videoSnippet.get("description").getAsString();
-                String publishedAt = videoSnippet.get("publishedAt").getAsString();
-                String viewCount = videoStatistics.get("viewCount").getAsString();
-                String likeCount = videoStatistics.get("likeCount").getAsString();
 
-                //Json파일에 저장
-                outputJson.addProperty("title", title);
-                outputJson.addProperty("description", description);
-                outputJson.addProperty("publishedAt", publishedAt);
-                outputJson.addProperty("viewCount", viewCount);
-                outputJson.addProperty("likeCount", likeCount);
+                // JSON 형태로 출력 (배열 형식으로 title과 description 추가)
+                JsonArray dataArray = new JsonArray();
+                dataArray.add(title);
+                dataArray.add(description);
+
+                JsonObject outputJson = new JsonObject();
+                outputJson.add("data", dataArray);
+
+                // 출력
+                System.out.println(outputJson.toString());
+
+                // 반환
+                return outputJson;
+            } else {
+                System.out.println("No video found with the given ID.");
+                return null;
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-            // 3. 댓글 가져오기
-            String commentUrl = "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=" + videoId
-                    + "&order=time&maxResults=100&key=" + apiKey;
+    // 댓글 입력 json 뽑기
+    public JsonObject get_data_comment(String channelId, String apiKey, String idContent, long offset) {
+        // YouTube API URL 설정 (최신 댓글 100개 가져오기)
+        String commentUrl = "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId="
+                + idContent + "&order=time&maxResults=100&key=" + apiKey;
 
+        // HttpClient 생성
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            // 댓글 요청
             HttpGet commentRequest = new HttpGet(commentUrl);
             HttpResponse commentResponse = client.execute(commentRequest);
             BufferedReader commentReader = new BufferedReader(
@@ -210,93 +218,102 @@ public class YouTubeService {
             StringBuilder commentJsonResponse = new StringBuilder();
             String line;
 
+            // 댓글 응답 읽기
             while ((line = commentReader.readLine()) != null) {
                 commentJsonResponse.append(line);
             }
             commentReader.close();
 
+            // JSON 응답 파싱
             JsonElement commentElement = JsonParser.parseString(commentJsonResponse.toString());
             JsonObject commentObject = commentElement.getAsJsonObject();
             JsonArray comments = commentObject.getAsJsonArray("items");
 
-
-            //Json파일에 저장
-            //JsonObject outputJson = new JsonObject();
-            // 4. JSON 파일로 저장 (간소화된 구조)
-            try (FileWriter fileWriter = new FileWriter("comments.json")) {
-                JsonArray commentsArray = new JsonArray();
-
-                for (JsonElement item : comments) {
-                    String textOriginal = item.getAsJsonObject().getAsJsonObject("snippet")
-                            .getAsJsonObject("topLevelComment").getAsJsonObject("snippet").get("textOriginal").getAsString();
-                    commentsArray.add(textOriginal); // textOriginal 값만 추가
-                }
-
-                // 최종 결과를 포함하는 JSON 객체
-                outputJson.add("comments", commentsArray);
-
-                // JSON을 파일에 작성
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                gson.toJson(outputJson, fileWriter);
-                System.out.println("Comments saved to comments.json");
+            // 댓글 텍스트만 추출하여 배열로 저장
+            ArrayList<String> textOriginalList = new ArrayList<>();
+            for (JsonElement item : comments) {
+                String textOriginal = item.getAsJsonObject().getAsJsonObject("snippet")
+                        .getAsJsonObject("topLevelComment").getAsJsonObject("snippet")
+                        .get("textOriginal").getAsString();
+                textOriginalList.add(textOriginal); // 텍스트만 배열에 추가
             }
 
+            // JSON 형태로 출력 (속성명을 'data'로 변경)
+            JsonObject outputJson = new JsonObject();
+            outputJson.add("data", new JsonArray());
+            for (String text : textOriginalList) {
+                outputJson.getAsJsonArray("data").add(new JsonPrimitive(text));
+            }
 
-            // 동영상 정보와 댓글을 JSON 형태로 Flask 서버에 보낼 준비 완료
-            // Flask 서버로 동영상 정보 및 댓글 전송DB 저장
-            JsonNode flaskResponse = sendJsonToFlaskServer(outputJson);
+            // 출력
+            System.out.println(outputJson.toString());
 
+            // 반환
+            return outputJson;
 
-            //System.out.println("JSON file created at: " + jsonFile.getAbsolutePath());
-
-            //content를 db에 저장
-            /*
-             *
-             * 구현 전
-             *
-             * */
-
-
-            //comment를 db에 저장 -> 다시 구현
-            /*
-             *
-             * 구현 전
-             *
-             * */
-
-
-//            // comment_keyword 배열 가져오기
-//            JsonNode commentKeywordArray = flaskResponse.path("comment_keyword");
-//
-//            // 배열이 존재하고, 배열 내 각 객체를 순회
-//            if (commentKeywordArray.isArray()) {
-//                for (JsonNode objNode : commentKeywordArray) {
-//                    String keyword = objNode.path("keyword").asText();
-//                    int found = objNode.path("score").asInt();
-//
-//                    // 키워드가 이미 존재하는지 확인
-//                    commentKeywordRepository.findByCommentKey(keyword).ifPresentOrElse(
-//                            existingKeyword -> {
-//                                // 키워드가 이미 존재하면 score 누적
-//                                existingKeyword.addScore(found);
-//                                commentKeywordRepository.save(existingKeyword);
-//                            },
-//                            () -> {
-//                                // 키워드가 없으면 새로 생성하여 저장
-//                                CommentKeyword newKeyword = new CommentKeyword(keyword, found);
-//                                commentKeywordRepository.save(newKeyword);
-//                            }
-//                    );
-//                }
-//            }
-
-
-            client.close();
-        } catch (Exception e) {
+        } catch (IOException e) {
+            // IOException 처리
             e.printStackTrace();
+            return null;
         }
+    }
 
+    // 키워드 데이터 DB에 저장
+    public void setKeywordData(String channelId, String apiKey, String idContent, boolean isComment,
+            JsonObject inputJson) {
 
+        KeywordDTO keywordDTO = new KeywordDTO();
+
+        // 동영상 정보와 댓글을 JSON 형태로 Flask 서버에 보낼 준비 완료
+        // Flask 서버로 동영상 정보 및 댓글 전송DB 저장
+        JsonNode flaskResponse = sendJsonToFlaskServer(inputJson);
+
+        // System.out.println("JSON file created at: " + jsonFile.getAbsolutePath());
+
+        /// !!! 박근원
+        /// 파라미터 추가
+        /// idContent : 비디오 id
+        /// isComment : 코멘트 분석이면 true, 콘텐트 분석이면 false
+        /// inputJson : 양식은 무조건 "data" 산하의 텍스트 배열
+
+        // content를 db에 저장
+        /*
+         *
+         * 구현 전
+         *
+         */
+
+        // comment를 db에 저장 -> 다시 구현
+        /*
+         *
+         * 구현 전
+         *
+         */
+
+        // // comment_keyword 배열 가져오기
+        // JsonNode commentKeywordArray = flaskResponse.path("comment_keyword");
+        //
+        // // 배열이 존재하고, 배열 내 각 객체를 순회
+        // if (commentKeywordArray.isArray()) {
+        // for (JsonNode objNode : commentKeywordArray) {
+        // String keyword = objNode.path("keyword").asText();
+        // int found = objNode.path("score").asInt();
+        //
+        // // 키워드가 이미 존재하는지 확인
+        // commentKeywordRepository.findByCommentKey(keyword).ifPresentOrElse(
+        // existingKeyword -> {
+        // // 키워드가 이미 존재하면 score 누적
+        // existingKeyword.addScore(found);
+        // commentKeywordRepository.save(existingKeyword);
+        // },
+        // () -> {
+        // // 키워드가 없으면 새로 생성하여 저장
+        // CommentKeyword newKeyword = new CommentKeyword(keyword, found);
+        // commentKeywordRepository.save(newKeyword);
+        // }
+        // );
+        // }
+        // }
     }
 
     // Flask 서버로 동영상 데이터를 전송하고 받는 메서드
@@ -330,9 +347,9 @@ public class YouTubeService {
 
             // 응답 본문을 읽어와서 JSON으로 파싱 -> Jackson 라이브러리를 활용 코드로 변경
             ObjectMapper objectMapper = new ObjectMapper();
-            //JsonObject flaskResponse = JsonParser.parseString(responseBody).getAsJsonObject();
+            // JsonObject flaskResponse =
+            // JsonParser.parseString(responseBody).getAsJsonObject();
             return objectMapper.readTree(responseBody);
-
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -342,10 +359,10 @@ public class YouTubeService {
 
     }
 
-    //워드클라우드 그래프 - 모든 키워드 상위 100개
+    // 워드클라우드 그래프 - 모든 키워드 상위 100개
     public KeywordDTO getWordCloudData(String channelId) {
 
-// Content 및 CommentKeyword 데이터를 각각 조회
+        // Content 및 CommentKeyword 데이터를 각각 조회
         List<Object[]> contentData = contentKeywordRepository.findContentKeysAndFoundByChannelId(channelId);
         List<Object[]> commentData = commentKeywordRepository.findCommentKeysAndFoundByChannelId(channelId);
 
@@ -362,7 +379,7 @@ public class YouTubeService {
         List<Integer> foundList = new ArrayList<>();
 
         for (int i = 0; i < Math.min(100, combinedData.size()); i++) {
-            keyList.add((String) combinedData.get(i)[0]);  // keyword
+            keyList.add((String) combinedData.get(i)[0]); // keyword
             foundList.add((Integer) combinedData.get(i)[1]); // found
         }
 
@@ -374,7 +391,7 @@ public class YouTubeService {
         return keywordDTO;
     }
 
-    //주제 키워드 랭킹 - 본문 키워드 상위 10개
+    // 주제 키워드 랭킹 - 본문 키워드 상위 10개
     public KeywordDTO getRankingData(String channelId) {
 
         // 상위 10개 데이터를 위한 PageRequest 생성
@@ -388,8 +405,8 @@ public class YouTubeService {
 
         // 데이터를 각각의 리스트에 추가
         for (Object[] row : contentData) {
-            contentKeyList.add((String) row[0]);  // contentKey
-            foundList.add((Integer) row[1]);      // found
+            contentKeyList.add((String) row[0]); // contentKey
+            foundList.add((Integer) row[1]); // found
         }
 
         // KeywordDTO에 리스트 설정
@@ -400,7 +417,7 @@ public class YouTubeService {
         return keywordDTO;
     }
 
-    //파이 차트 - 댓글 키워드 (동영상 당 8개)
+    // 파이 차트 - 댓글 키워드 (동영상 당 8개)
     public KeywordDTO getPieData(String channelId) {
 
         String contentId = "";
@@ -414,8 +431,8 @@ public class YouTubeService {
 
         // 데이터를 각각의 리스트에 추가
         for (Object[] row : commentData) {
-            keyList.add((String) row[0]);      // commentKey
-            foundList.add((Integer) row[1]);   // found
+            keyList.add((String) row[0]); // commentKey
+            foundList.add((Integer) row[1]); // found
         }
 
         // KeywordDTO에 리스트 설정
@@ -428,14 +445,52 @@ public class YouTubeService {
 
     public Object getGrowthData(String channelId) {
 
-        List<Integer> growthContent  = new ArrayList<>();
-        List<Integer> growthComment  = new ArrayList<>();
-
-
+        List<Integer> growthContent = new ArrayList<>();
+        List<Integer> growthComment = new ArrayList<>();
 
         return null;
     }
 
+    ////// 임시임시임시임시
 
+    // ! 임시함수 : 최신 영상 ID 가져오기
+    public String getLatestVideoId(String channelId, String apiKey) {
+        // YouTube API URL 설정 (최신 영상 가져오기)
+        String videoUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&channelId="
+                + channelId + "&order=date&maxResults=1&key=" + apiKey;
+
+        // HttpClient 생성
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            // 비디오 정보 요청
+            HttpGet videoRequest = new HttpGet(videoUrl);
+            HttpResponse videoResponse = client.execute(videoRequest);
+            BufferedReader videoReader = new BufferedReader(
+                    new InputStreamReader(videoResponse.getEntity().getContent(), "UTF-8"));
+            StringBuilder videoJsonResponse = new StringBuilder();
+            String line;
+
+            // 응답 읽기
+            while ((line = videoReader.readLine()) != null) {
+                videoJsonResponse.append(line);
+            }
+            videoReader.close();
+
+            // JSON 응답 파싱
+            JsonObject videoJsonObject = JsonParser.parseString(videoJsonResponse.toString()).getAsJsonObject();
+            JsonArray videoItems = videoJsonObject.getAsJsonArray("items");
+
+            if (videoItems.size() > 0) {
+                // 가장 최신 비디오 ID 반환 (문자열 형식)
+                return videoItems.get(0).getAsJsonObject().getAsJsonObject("id").get("videoId").getAsString();
+            } else {
+                System.out.println("No videos found.");
+                return null;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
 }

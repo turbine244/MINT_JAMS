@@ -185,7 +185,7 @@ public class YouTubeService {
                 dataArray.add(description);
 
                 JsonObject outputJson = new JsonObject();
-                outputJson.add("data", dataArray);
+                outputJson.add("content", dataArray);
 
                 // 출력
                 System.out.println(outputJson.toString());
@@ -240,9 +240,9 @@ public class YouTubeService {
 
             // JSON 형태로 출력 (속성명을 'data'로 변경)
             JsonObject outputJson = new JsonObject();
-            outputJson.add("data", new JsonArray());
+            outputJson.add("comment", new JsonArray());
             for (String text : textOriginalList) {
-                outputJson.getAsJsonArray("data").add(new JsonPrimitive(text));
+                outputJson.getAsJsonArray("comment").add(new JsonPrimitive(text));
             }
 
             // 출력

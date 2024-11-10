@@ -15,5 +15,9 @@ public class KeywordDTO {
     private List<String> keyList;
     private List<Integer> foundList;
 
+    public KeywordDTO(List<String> keyList, List<Integer> foundList) {
+        this.keyList = keyList;
+        this.foundList = foundList;
+    }
 
     }

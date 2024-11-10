@@ -45,9 +45,9 @@ public class YouTubeController {
         // 채널 DTO 값이 DB정보와 차이가 '없을' 경우에는, DB정보만 끌고 오면 됨
 
         /*
-         * 
+         *
          * 채널 DTO와 DB 비교 코드 구현 전
-         * 
+         *
          */
 
         // 채널 DTO 값이 DB정보와 차이가 '있을' 경우에 아래 코드가 실행
@@ -65,7 +65,7 @@ public class YouTubeController {
         model.addAttribute("pieChart", youTubeService.getPieData(channelId));
 
         // 월벌 채널 변화량
-        model.addAttribute("growthChart", youTubeService.getGrowthData(channelId));
+        //model.addAttribute("growthChart", youTubeService.getGrowthData(channelId));
 
         return "info";
     }

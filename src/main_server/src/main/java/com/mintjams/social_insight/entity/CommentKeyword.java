@@ -16,12 +16,12 @@ public class CommentKeyword {
 
     //채널id(외래키)
     @ManyToOne
-    @JoinColumn(name = "channel_id", referencedColumnName = "channelId", nullable = false)
+    @JoinColumn(name = "channel_id")
     private Channel channel;
 
     //컨텐트id
     @ManyToOne
-    @JoinColumn(name = "content_id", referencedColumnName = "contentId", nullable = false)
+    @JoinColumn(name = "content_id")
     private Content content;
 
     @Column(unique = true)
@@ -29,18 +29,6 @@ public class CommentKeyword {
 
     @Column
     private int found;
-
-
-    // keyword와 score를 받는 생성자
-    public CommentKeyword(String keyword, int found) {
-        this.commentKey = keyword;
-        this.found = found;
-    }
-
-    public void addScore(int found) {
-        this.found += found;
-    }
-
 
 
 }

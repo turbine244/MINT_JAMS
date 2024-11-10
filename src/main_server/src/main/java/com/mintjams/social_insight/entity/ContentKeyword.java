@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity(name = "content")
+@Entity(name = "content_keyword")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,7 +16,7 @@ public class ContentKeyword {
 
     //채널id(외래키)
     @ManyToOne
-    @JoinColumn(name = "channel_id", referencedColumnName = "channelId", nullable = false)
+    @JoinColumn(name = "channel_id")
     private Channel channel;
 
     @Column(unique = true)

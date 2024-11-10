@@ -11,11 +11,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class Channel {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Id
+    @Column(unique = true)
     private String channelId;
 
 }

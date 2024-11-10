@@ -6,23 +6,22 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity(name = "content_keyword")
+@Entity(name = "content")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Content {
+    //컨텐트id
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) //auto_increment
-    private Long id;
+    @Column(unique = true)
+    private String contentId;
 
     //채널id(외래키)
     @ManyToOne
-    @JoinColumn(name = "channel_id", referencedColumnName = "channelId", nullable = false)
+    @JoinColumn(name = "channel_id")
     private Channel channel;
 
-    //컨텐트id
-    @Column(unique = true ,nullable = false)
-    private String contentId;
+
 
 
 }

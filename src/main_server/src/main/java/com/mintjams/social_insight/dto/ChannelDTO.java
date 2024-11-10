@@ -10,7 +10,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ChannelDTO {
     private String channelId;
-
     private String channelTitle;
     private String channelUrl;
     private String createdAt;

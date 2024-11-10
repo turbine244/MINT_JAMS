@@ -1,9 +1,10 @@
 package com.mintjams.social_insight.repository;
 
-import com.mintjams.social_insight.entity.ContentKeyword;
+import com.mintjams.social_insight.entity.Content;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface ContentRepository extends JpaRepository<ContentKeyword, Long> {
-   // Optional<ContentKeyword> findByContentKeyword(String keyword);
+@Repository
+public interface ContentRepository extends JpaRepository<Content, String> {
 
 }

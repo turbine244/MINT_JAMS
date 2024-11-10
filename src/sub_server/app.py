@@ -33,7 +33,7 @@ def normalize_keyword(keyword):
     okt = Okt()
     # 어간 추출로 기본형을 찾기
     normalized = okt.morphs(keyword, stem=True)
-    return ' '.join(normalized)  # 기본형 단어들로 변환
+    return ''.join(normalized)  # 기본형 단어들로 변환
 
 
 def content_keyword_process(json_data):

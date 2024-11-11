@@ -23,10 +23,10 @@ def translate_korean_to_english(text):
     return translated.text
 
 
-def extract_keywords(text, lang='en', num_keywords=1):
-    keyword_extractor = yake.KeywordExtractor(lan=lang, n=1)
+def get_keywords(text, lang='en', num_keywords=1):
+    keyword_extractor = yake.KeywordExtractor(lan=lang, n=1, top=num_keywords)
     keywords = keyword_extractor.extract_keywords(text)
-    return keywords[:num_keywords]
+    return keywords
 
 
 def normalize_keyword(keyword):
@@ -39,7 +39,7 @@ def normalize_keyword(keyword):
 def content_keyword_process(json_data):
     combined_content = ' '.join(json_data['content'])  # 리스트를 문자열로 결합
     content_lang = detect_language(combined_content)
-    content_keywords = extract_keywords(combined_content, lang=content_lang, num_keywords=3)
+    content_keywords = get_keywords(combined_content, lang=content_lang, num_keywords=3)
 
     keyword_result = []
     for keyword, _ in content_keywords:
@@ -60,7 +60,7 @@ def comment_keyword_process(json_data):
     keyword_counter = Counter()
     
     for comment in json_data['comment']:
-        comment_keywords = extract_keywords(comment, lang=comment_lang, num_keywords=1)
+        comment_keywords = get_keywords(comment, lang=comment_lang, num_keywords=1)
         for keyword, _ in comment_keywords:
             if comment_lang == 'ko':
                 keyword = normalize_keyword(keyword)  # 기본형으로 변환
@@ -153,6 +153,8 @@ def save_keywords_to_json(keywords, filename="keywords.json"):
     with open(filename, 'w', encoding='utf-8') as json_file:
         json.dump(keywords, json_file, indent=4, ensure_ascii=False)
     print(f"Keywords have been saved to '{filename}'")
+    
 
 if __name__ == '__main__':
     app.run(debug=True)
+    

@@ -289,8 +289,9 @@
   <!--MAIN-->
   <script th:inline="javascript">
     // DTO 받기
-    let dto_pie = [[${ pieChart }]];
+    let dto_cloud = [[${ wordCloud }]];
     let dto_rank = [[${ rankingChart }]];
+    let dto_pie = [[${ pieChart }]];
 
 
     // 페이지 로드 시 차트 그리기
@@ -299,7 +300,7 @@
       //drawRankChart(defaultData, defaultLabels);
       //drawPieChart(defaultData, defaultLabels);
 
-      drawWordCloud(dto_pie.foundList, dto_pie.keyList);
+      drawWordCloud(dto_cloud.foundList, dto_cloud.keyList);
       drawRankChart(dto_rank.foundList, dto_rank.keyList);
       drawPieChart(dto_pie.foundList, dto_pie.keyList);
     }

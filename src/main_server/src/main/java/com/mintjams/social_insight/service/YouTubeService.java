@@ -391,7 +391,7 @@ public class YouTubeService {
             // HTTP 응답 코드 확인
             int statusCode = response.getStatusLine().getStatusCode();
             String responseBody = EntityUtils.toString(response.getEntity(), "UTF-8");
-            System.out.println("Response from Flask: " + responseBody);
+            //System.out.println("Response from Flask: " + responseBody);
 
             if (statusCode != 200) {
                 String errorMessage = "Flask 서버와의 통신 중 오류 발생: " + statusCode + ". 응답 본문: " + responseBody;
@@ -415,12 +415,25 @@ public class YouTubeService {
 
 
 
-
     // 워드클라우드 그래프 - 모든 키워드 상위 100개
     public KeywordDTO getWordCloudData(String channelId) {
 
+        List<Object[]> results = contentKeywordRepository.findTop100ByChannelIdOrderByFoundDesc(channelId);
 
-        return null;
+        // 키워드 리스트와 found 리스트 생성
+        List<String> keyList = results.stream()
+                .map(result -> (String) result[0])
+                .collect(Collectors.toList());
+        List<Integer> foundList = results.stream()
+                .map(result -> (Integer) result[1])
+                .collect(Collectors.toList());
+
+        // Console 출력
+        System.out.println("Key List: " + keyList);
+        System.out.println("Found List: " + foundList);
+
+        // KeywordDTO에 저장하여 반환
+        return new KeywordDTO(keyList, foundList);
 
     }
 

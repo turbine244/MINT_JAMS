@@ -24,7 +24,7 @@ public interface ContentKeywordRepository extends JpaRepository<ContentKeyword, 
     @Query(
             value = "SELECT k.comment_Key AS keyword, k.found FROM Comment_Keyword k WHERE k.channel_id = :channelId " +
                     "UNION ALL " +
-                    "SELECT c.content_Key AS keyword, c.found FROM Content_Keyword c WHERE c.channel_id = :channelId " +
+                    "SELECT c.content_Key AS keyword, c.found * 10 AS found FROM Content_Keyword c WHERE c.channel_id = :channelId " +
                     "ORDER BY found DESC LIMIT 100", nativeQuery = true
     )
     List<Object[]> findTop100ByChannelIdOrderByFoundDesc(@Param("channelId") String channelId);

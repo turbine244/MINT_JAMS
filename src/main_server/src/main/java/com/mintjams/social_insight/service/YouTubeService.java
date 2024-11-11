@@ -416,7 +416,7 @@ public class YouTubeService {
 
 
     // 워드클라우드 그래프 - 모든 키워드 상위 100개
-    public KeywordDTO getWordCloudData(String channelId) {
+    public WordCloudDTO getWordCloudData(String channelId) {
 
         List<Object[]> results = contentKeywordRepository.findTop100ByChannelIdOrderByFoundDesc(channelId);
 
@@ -424,8 +424,8 @@ public class YouTubeService {
         List<String> keyList = results.stream()
                 .map(result -> (String) result[0])
                 .collect(Collectors.toList());
-        List<Integer> foundList = results.stream()
-                .map(result -> (Integer) result[1])
+        List<Long> foundList = results.stream()
+                .map(result -> (Long) result[1])
                 .collect(Collectors.toList());
 
         // Console 출력
@@ -433,7 +433,7 @@ public class YouTubeService {
         System.out.println("Found List: " + foundList);
 
         // KeywordDTO에 저장하여 반환
-        return new KeywordDTO(keyList, foundList);
+        return new WordCloudDTO(keyList, foundList);
 
     }
 

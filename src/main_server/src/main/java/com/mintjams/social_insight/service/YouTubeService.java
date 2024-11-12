@@ -101,7 +101,7 @@ public class YouTubeService {
                 String _channelTitle = channelSnippet.get("title").getAsString(); // 채널명
                 String _channelUrl = "https://www.youtube.com/channel/" + channelId; // 채널 메인 주소
 
-                String _channelProfileImageUrl = channelSnippet.get("thumbnails").getAsJsonObject()
+                String _channelThumbnail = channelSnippet.get("thumbnails").getAsJsonObject()
                         .get("high").getAsJsonObject()
                         .get("url").getAsString(); // 프로필 이미지 URL
 
@@ -128,7 +128,7 @@ public class YouTubeService {
 
                 channelDTO.setChannelTitle(_channelTitle);
                 channelDTO.setChannelUrl(_channelUrl);
-                channelDTO.setChannelProfileImgUrl(_channelProfileImageUrl);
+                channelDTO.setChannelThumbnail(_channelThumbnail);
                 channelDTO.setCreatedAt(_publishedAt);
                 channelDTO.setSubscriberCount(_subscriberCount);
                 channelDTO.setVideoCount(_videoCount);

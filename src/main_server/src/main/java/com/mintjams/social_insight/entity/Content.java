@@ -21,7 +21,9 @@ public class Content {
     @JoinColumn(name = "channel_id")
     private Channel channel;
 
-
+    //본문 당 댓글 개수
+    @Column
+    private Integer commentNum;
 
 
 }

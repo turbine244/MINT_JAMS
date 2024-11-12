@@ -98,27 +98,40 @@ public class YouTubeService {
                 JsonObject channelSnippet = channelInfoItems.get(0).getAsJsonObject().getAsJsonObject("snippet");
                 JsonObject channelStatistics = channelInfoItems.get(0).getAsJsonObject().getAsJsonObject("statistics");
 
-                channelTitle = channelSnippet.get("title").getAsString(); // 채널명
-                String channelUrl = "https://www.youtube.com/channel/" + channelId; // 채널 메인 주소
-                String publishedAtFull = channelSnippet.get("publishedAt").getAsString(); // 채널 개설일 전체
-                String publishedAt = publishedAtFull.split("T")[0]; // 채널 개설일 날짜만
+                String _channelTitle = channelSnippet.get("title").getAsString(); // 채널명
+                String _channelUrl = "https://www.youtube.com/channel/" + channelId; // 채널 메인 주소
 
-                String subscriberCount = channelStatistics.has("subscriberCount")
+                String _channelProfileImageUrl = channelSnippet.get("thumbnails").getAsJsonObject()
+                        .get("high").getAsJsonObject()
+                        .get("url").getAsString(); // 프로필 이미지 URL
+
+                String _publishedAtFull = channelSnippet.get("publishedAt").getAsString(); // 채널 개설일 전체
+                String _publishedAt = _publishedAtFull.split("T")[0]; // 채널 개설일 날짜만
+
+                String _subscriberCount = channelStatistics.has("subscriberCount")
                         ? channelStatistics.get("subscriberCount").getAsString()
                         : "Hidden"; // 구독자 수 (비공개인 경우 'Hidden')
-                String videoCount = channelStatistics.get("videoCount").getAsString(); // 동영상 수
+                try {
+                    int numSub = Integer.parseInt(_subscriberCount);
+                    if (numSub >= 1000) {
+                        numSub /= 1000;
+                        _subscriberCount = numSub + "K";
+                    }
+                } catch (NumberFormatException e) {
+                    // _subscriberCount == "Hidden"
+                }
 
-                //
-                // videoDataDTO.setVideoId(videoId);
+                String _videoCount = channelStatistics.get("videoCount").getAsString(); // 동영상 수
 
                 // DTO에 데이터 설정
                 channelDTO.setChannelId(channelId);
 
-                channelDTO.setChannelTitle(channelTitle);
-                channelDTO.setChannelUrl(channelUrl);
-                channelDTO.setCreatedAt(publishedAt);
-                channelDTO.setSubscriberCount(subscriberCount);
-                channelDTO.setVideoCount(videoCount);
+                channelDTO.setChannelTitle(_channelTitle);
+                channelDTO.setChannelUrl(_channelUrl);
+                channelDTO.setChannelProfileImgUrl(_channelProfileImageUrl);
+                channelDTO.setCreatedAt(_publishedAt);
+                channelDTO.setSubscriberCount(_subscriberCount);
+                channelDTO.setVideoCount(_videoCount);
 
             }
 
@@ -141,7 +154,7 @@ public class YouTubeService {
         String idContent = getLatestVideoId(channelId, apiKey);
         JsonObject inputJson;
 
-        //채널과 콘텐츠 ID DB갱신
+        // 채널과 콘텐츠 ID DB갱신
         Channel channel = new Channel();
         channel.setChannelId(channelId);
         System.out.println(channelId);
@@ -150,8 +163,6 @@ public class YouTubeService {
         content.setContentId(idContent);
         content.setChannel(channel);
         contentRepository.save(content);
-
-
 
         // 본문 분석
         inputJson = get_data_content(channelId, apiKey, idContent);
@@ -163,8 +174,7 @@ public class YouTubeService {
 
         setKeywordData(channelId, apiKey, idContent, true, inputJson);
 
-
-        //return 0;
+        // return 0;
     }
 
     // 본문 입력 json 뽑기
@@ -207,7 +217,7 @@ public class YouTubeService {
                 outputJson.add("content", dataArray);
 
                 // 출력
-                //System.out.println(outputJson.toString());
+                // System.out.println(outputJson.toString());
 
                 // 반환
                 return outputJson;
@@ -265,7 +275,7 @@ public class YouTubeService {
             }
 
             // 출력
-            //System.out.println(outputJson.toString());
+            // System.out.println(outputJson.toString());
 
             // 반환
             return outputJson;
@@ -279,7 +289,7 @@ public class YouTubeService {
 
     // 키워드 데이터 DB에 저장
     public void setKeywordData(String channelId, String apiKey, String idContent, boolean isComment,
-                               JsonObject inputJson) {
+            JsonObject inputJson) {
 
         KeywordDTO keywordDTO = new KeywordDTO();
 
@@ -287,7 +297,7 @@ public class YouTubeService {
         // Flask 서버로 본문 또는 댓글 정보 전송
         JsonNode flaskResponse = sendJsonToFlaskServer(inputJson);
 
-        //System.out.println("JSON file created at: " + jsonFile.getAbsolutePath());
+        // System.out.println("JSON file created at: " + jsonFile.getAbsolutePath());
 
         /// !!! 박근원
         /// 파라미터 추가
@@ -295,7 +305,7 @@ public class YouTubeService {
         /// isComment : 코멘트(댓글) 분석이면 true, 콘텐트(본문) 분석이면 false
         /// inputJson : 양식은 무조건 "data" 산하의 텍스트 배열
 
-        if(!isComment){
+        if (!isComment) {
             // content를 db에 저장
 
             // 채널 확인
@@ -310,14 +320,15 @@ public class YouTubeService {
                 int found = keywordNode.get("found").asInt();
 
                 // 같은 키워드가 이미 존재하는지 확인
-                Optional<ContentKeyword> existingKeywordOpt = contentKeywordRepository.findByContentKeyAndChannel(keyword, channel);
+                Optional<ContentKeyword> existingKeywordOpt = contentKeywordRepository
+                        .findByContentKeyAndChannel(keyword, channel);
 
                 if (existingKeywordOpt.isPresent()) {
                     // 존재하는 경우: found 값을 누적하고 업데이트
                     ContentKeyword existingKeyword = existingKeywordOpt.get();
                     existingKeyword.setFound(existingKeyword.getFound() + found);
                     contentKeywordRepository.save(existingKeyword); // 업데이트 저장
-                } else{
+                } else {
                     // 존재하지 않는 경우: 새로운 키워드 엔티티 생성 및 저장
                     ContentKeyword contentKeyword = new ContentKeyword();
                     contentKeyword.setChannel(channel);
@@ -348,14 +359,15 @@ public class YouTubeService {
                 int found = keywordNode.get("found").asInt();
 
                 // 같은 키워드가 이미 존재하는지 확인
-                Optional<CommentKeyword> existingKeywordOpt = commentKeywordRepository.findByCommentKeyAndChannelAndContent(keyword, channel, content);
+                Optional<CommentKeyword> existingKeywordOpt = commentKeywordRepository
+                        .findByCommentKeyAndChannelAndContent(keyword, channel, content);
 
                 if (existingKeywordOpt.isPresent()) {
                     // 존재하는 경우: found 값을 누적하고 업데이트
                     CommentKeyword existingKeyword = existingKeywordOpt.get();
                     existingKeyword.setFound(existingKeyword.getFound() + found);
                     commentKeywordRepository.save(existingKeyword); // 업데이트 저장
-                } else{
+                } else {
                     // 존재하지 않는 경우: 새로운 키워드 엔티티 생성 및 저장
                     CommentKeyword commentKeyword = new CommentKeyword();
                     commentKeyword.setChannel(channel);
@@ -375,8 +387,9 @@ public class YouTubeService {
     // Flask 서버로 동영상 데이터를 전송하고 받는 메서드
     private JsonNode sendJsonToFlaskServer(JsonObject outputJson) {
 
-        String flaskUrl = "http://localhost:5000/respondK"; //키워드서버
-        //System.out.println("Sending JSON to Flask: " + outputJson.toString()); // 전송할 JSON 출력
+        String flaskUrl = "http://localhost:5000/respondK"; // 키워드서버
+        // System.out.println("Sending JSON to Flask: " + outputJson.toString()); // 전송할
+        // JSON 출력
 
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpPost httpPost = new HttpPost(flaskUrl);
@@ -391,7 +404,7 @@ public class YouTubeService {
             // HTTP 응답 코드 확인
             int statusCode = response.getStatusLine().getStatusCode();
             String responseBody = EntityUtils.toString(response.getEntity(), "UTF-8");
-            //System.out.println("Response from Flask: " + responseBody);
+            // System.out.println("Response from Flask: " + responseBody);
 
             if (statusCode != 200) {
                 String errorMessage = "Flask 서버와의 통신 중 오류 발생: " + statusCode + ". 응답 본문: " + responseBody;
@@ -413,10 +426,8 @@ public class YouTubeService {
 
     }
 
-
-
     // 워드클라우드 그래프 - 모든 키워드 상위 100개
-    public WordCloudDTO getWordCloudData(String channelId) {
+    public KeywordDTO getWordCloudData(String channelId) {
 
         List<Object[]> results = contentKeywordRepository.findTop100ByChannelIdOrderByFoundDesc(channelId);
 
@@ -424,8 +435,8 @@ public class YouTubeService {
         List<String> keyList = results.stream()
                 .map(result -> (String) result[0])
                 .collect(Collectors.toList());
-        List<Long> foundList = results.stream()
-                .map(result -> (Long) result[1])
+        List<Integer> foundList = results.stream()
+                .map(result -> (Integer) result[1])
                 .collect(Collectors.toList());
 
         // Console 출력
@@ -433,7 +444,7 @@ public class YouTubeService {
         System.out.println("Found List: " + foundList);
 
         // KeywordDTO에 저장하여 반환
-        return new WordCloudDTO(keyList, foundList);
+        return new KeywordDTO(keyList, foundList);
 
     }
 
@@ -446,9 +457,9 @@ public class YouTubeService {
 
         for (ContentKeyword keyword : topKeywords) {
             keyList.add(keyword.getContentKey());
-            //System.out.println("본문 키워드: " + keyword.getContentKey());
+            // System.out.println("본문 키워드: " + keyword.getContentKey());
             foundList.add(keyword.getFound());
-            //System.out.println("댓글 키워드: " + keyword.getFound());
+            // System.out.println("댓글 키워드: " + keyword.getFound());
         }
 
         return new KeywordDTO(keyList, foundList);
@@ -456,16 +467,17 @@ public class YouTubeService {
 
     // 파이 차트 - 댓글 키워드 (동영상 당 8개)
     public KeywordDTO getPieData(String channelId) {
-        List<Object[]> topKeywords = commentKeywordRepository.findTop8ByChannelIdAndCommentIdOrderByFoundDesc(channelId);
+        List<Object[]> topKeywords = commentKeywordRepository
+                .findTop8ByChannelIdAndCommentIdOrderByFoundDesc(channelId);
 
         List<String> keyList = new ArrayList<>();
         List<Integer> foundList = new ArrayList<>();
 
         for (Object[] keyword : topKeywords) {
             keyList.add((String) keyword[0]);
-            //System.out.println("댓글 키워드: " + keyword[0]);
+            // System.out.println("댓글 키워드: " + keyword[0]);
             foundList.add((Integer) keyword[1]);
-            //System.out.println("댓글 점수: " + keyword[1]);
+            // System.out.println("댓글 점수: " + keyword[1]);
         }
 
         return new KeywordDTO(keyList, foundList);

@@ -36,22 +36,22 @@
   <div class="cardbox">
     <!-- CHANNEL CARD -->
     <div class="channel card">
-      <div class="channel-image"></div>
+      <div class="channel-image" id="url_thumbnail_channel"></div>
       <div class="channel-info">
-        <div class="channel-name" id="txt_name_channel" th:text="${channel.channelTitle}"></div>
-        <div class="channel-link" id="txt_link_channel" th:text="${channel.channelUrl}"></div>
+        <div class="channel-name" id="txt_name_channel"></div>
+        <div class="channel-link" id="txt_link_channel"></div>
         <table class="tbl_info-native">
           <tr>
             <th>채널 개설일</th>
-            <td id="ymd_publish" th:text="${channel.createdAt}"></td>
+            <td id="ymd_creation_channel"></td>
           </tr>
           <tr>
             <th>구독자 수</th>
-            <td id="num_subscriber" th:text="${channel.subscriberCount}"></td>
+            <td id="txt_subscriber"></td>
           </tr>
           <tr>
             <th>콘텐츠 수</th>
-            <td id="num_content" th:text="${channel.videoCount}"></td>
+            <td id="num_content"></td>
           </tr>
         </table>
         <table class="tbl_info-anchor">
@@ -116,6 +116,33 @@
     }
   </script>
 
+  <!--FDEF : ChannelCard-->
+  <script>
+    function drawChannelCard(_channel) {
+      let temp;
+
+      temp = document.getElementById('txt_name_channel');
+      temp.innerText = _channel.channelTitle;
+
+      temp = document.getElementById('txt_link_channel');
+      temp.innerText = _channel.channelUrl;
+
+      temp = document.getElementById('ymd_creation_channel');
+      temp.innerText = _channel.createdAt;
+
+      temp = document.getElementById('txt_subscriber');
+      temp.innerText = _channel.subscriberCount;
+
+      temp = document.getElementById('num_content');
+      temp.innerText = _channel.videoCount;
+
+      temp = document.getElementById('url_thumbnail_channel');
+      temp.style.backgroundImage = `url('${_channel.channelThumbnail}')`;
+      temp.style.backgroundSize = "cover"; // 이미지가 요소를 채우도록 설정
+      temp.style.backgroundPosition = "center"; // 이미지 가운데 정렬
+    }
+  </script>
+
   <!--WORDCLOUD-->
   <script>
     function drawWordCloud(data, labels) {
@@ -125,7 +152,7 @@
       //워드클라우드 환경설정
 
       var wordset = [];
-      for (var i = 0; i < 5; i++) {
+      for (var i = 0; i < data.length; i++) {
         wordset.push({ text: labels[i], count: data[i] });
       }
 
@@ -136,7 +163,7 @@
           words: wordset,
           minLength: 5,
           ignore: [""],
-          maxItems: 40,
+          maxItems: 100,
           aspect: 'spiral', // 'flow-top' | 'flow-center'
 
           colorType: 'palette',
@@ -289,6 +316,8 @@
   <!--MAIN-->
   <script th:inline="javascript">
     // DTO 받기
+    let dto_channel = [[${ channel }]];
+
     let dto_cloud = [[${ wordCloud }]];
     let dto_rank = [[${ rankingChart }]];
     let dto_pie = [[${ pieChart }]];
@@ -296,6 +325,8 @@
 
     // 페이지 로드 시 차트 그리기
     window.onload = function () {
+      drawChannelCard(dto_channel);
+
       //drawWordCloud(defaultData, defaultLabels);
       //drawRankChart(defaultData, defaultLabels);
       //drawPieChart(defaultData, defaultLabels);

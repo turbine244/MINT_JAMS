@@ -100,39 +100,27 @@ public class YouTubeService {
 
                 String _channelTitle = channelSnippet.get("title").getAsString(); // 채널명
                 String _channelUrl = "https://www.youtube.com/channel/" + channelId; // 채널 메인 주소
-
-                String _channelThumbnail = channelSnippet.get("thumbnails").getAsJsonObject()
-                        .get("high").getAsJsonObject()
-                        .get("url").getAsString(); // 프로필 이미지 URL
-
                 String _publishedAtFull = channelSnippet.get("publishedAt").getAsString(); // 채널 개설일 전체
                 String _publishedAt = _publishedAtFull.split("T")[0]; // 채널 개설일 날짜만
 
                 String _subscriberCount = channelStatistics.has("subscriberCount")
                         ? channelStatistics.get("subscriberCount").getAsString()
                         : "Hidden"; // 구독자 수 (비공개인 경우 'Hidden')
-                try {
-                    int numSub = Integer.parseInt(_subscriberCount);
-                    if (numSub >= 1000) {
-                        numSub /= 1000;
-                        _subscriberCount = numSub + "K";
-                    }
-                } catch (NumberFormatException e) {
-                    // _subscriberCount == "Hidden"
-                }
-
                 String _videoCount = channelStatistics.get("videoCount").getAsString(); // 동영상 수
+
+                String _channelThumbnail = channelSnippet.get("thumbnails").getAsJsonObject()
+                        .get("high").getAsJsonObject()
+                        .get("url").getAsString(); // 프로필 이미지 URL
 
                 // DTO에 데이터 설정
                 channelDTO.setChannelId(channelId);
 
                 channelDTO.setChannelTitle(_channelTitle);
                 channelDTO.setChannelUrl(_channelUrl);
-                channelDTO.setChannelThumbnail(_channelThumbnail);
                 channelDTO.setCreatedAt(_publishedAt);
                 channelDTO.setSubscriberCount(_subscriberCount);
                 channelDTO.setVideoCount(_videoCount);
-
+                channelDTO.setChannelThumbnail(_channelThumbnail);
             }
 
             client.close();
@@ -427,7 +415,7 @@ public class YouTubeService {
     }
 
     // 워드클라우드 그래프 - 모든 키워드 상위 100개
-    public KeywordDTO getWordCloudData(String channelId) {
+    public WordCloudDTO getWordCloudData(String channelId) {
 
         List<Object[]> results = contentKeywordRepository.findTop100ByChannelIdOrderByFoundDesc(channelId);
 
@@ -435,8 +423,8 @@ public class YouTubeService {
         List<String> keyList = results.stream()
                 .map(result -> (String) result[0])
                 .collect(Collectors.toList());
-        List<Integer> foundList = results.stream()
-                .map(result -> (Integer) result[1])
+        List<Long> foundList = results.stream()
+                .map(result -> (Long) result[1])
                 .collect(Collectors.toList());
 
         // Console 출력
@@ -444,7 +432,7 @@ public class YouTubeService {
         System.out.println("Found List: " + foundList);
 
         // KeywordDTO에 저장하여 반환
-        return new KeywordDTO(keyList, foundList);
+        return new WordCloudDTO(keyList, foundList);
 
     }
 

@@ -11,8 +11,8 @@ public class ChannelDTO {
     private String channelId;
     private String channelTitle;
     private String channelUrl;
-    private String channelThumbnail;
     private String createdAt;
     private String subscriberCount;
-    private String videoCount;
+    private Integer numContent;
+    private String channelThumbnail;
 }

@@ -24,7 +24,7 @@ public class CommentKeyword {
     @JoinColumn(name = "content_id")
     private Content content;
 
-    @Column(unique = true)
+    @Column
     private String commentKey;
 
     @Column

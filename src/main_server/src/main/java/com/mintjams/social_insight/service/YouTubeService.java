@@ -106,7 +106,18 @@ public class YouTubeService {
                 String _subscriberCount = channelStatistics.has("subscriberCount")
                         ? channelStatistics.get("subscriberCount").getAsString()
                         : "Hidden"; // 구독자 수 (비공개인 경우 'Hidden')
-                String _videoCount = channelStatistics.get("videoCount").getAsString(); // 동영상 수
+                try {
+                    if (Integer.parseInt(_subscriberCount) >= 1000000) {
+                        _subscriberCount = Integer.parseInt(_subscriberCount) / 1000000 + "M";
+                    }
+                    if (Integer.parseInt(_subscriberCount) >= 1000) {
+                        _subscriberCount = Integer.parseInt(_subscriberCount) / 1000 + "K";
+                    }
+                } catch (NumberFormatException e) {
+                    // Hidden
+                }
+
+                Integer _videoCount = channelStatistics.get("videoCount").getAsInt(); // 동영상 수
 
                 String _channelThumbnail = channelSnippet.get("thumbnails").getAsJsonObject()
                         .get("high").getAsJsonObject()
@@ -119,7 +130,7 @@ public class YouTubeService {
                 channelDTO.setChannelUrl(_channelUrl);
                 channelDTO.setCreatedAt(_publishedAt);
                 channelDTO.setSubscriberCount(_subscriberCount);
-                channelDTO.setVideoCount(_videoCount);
+                channelDTO.setNumContent(_videoCount);
                 channelDTO.setChannelThumbnail(_channelThumbnail);
             }
 
@@ -428,8 +439,8 @@ public class YouTubeService {
                 .collect(Collectors.toList());
 
         // Console 출력
-        System.out.println("Key List: " + keyList);
-        System.out.println("Found List: " + foundList);
+        // System.out.println("Key List: " + keyList);
+        // System.out.println("Found List: " + foundList);
 
         // KeywordDTO에 저장하여 반환
         return new WordCloudDTO(keyList, foundList);

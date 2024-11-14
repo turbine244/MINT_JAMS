@@ -18,8 +18,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -164,20 +162,20 @@ public class YouTubeService {
         contentRepository.save(content);
 
         // 본문 분석
-        inputJson = get_data_content(channelId, apiKey, idContent);
+        inputJson = get_data_content(apiKey, channelId, idContent);
 
-        setKeywordData(channelId, apiKey, idContent, false, inputJson);
+        setKeywordData(channelId, idContent, false, inputJson);
 
         // 댓글 분석
-        inputJson = get_data_comment(channelId, apiKey, idContent, 0);
-
-        setKeywordData(channelId, apiKey, idContent, true, inputJson);
+        inputJson = get_data_comment(apiKey, idContent, 2, 1);
+        splitJsonObject(inputJson, 2, 1);
+        setKeywordData(channelId, idContent, true, inputJson);
 
         // return 0;
     }
 
     // 본문 입력 json 뽑기
-    public JsonObject get_data_content(String channelId, String apiKey, String idContent) {
+    public JsonObject get_data_content(String apiKey, String channelId, String idContent) {
         // YouTube API URL 설정 (비디오 정보 가져오기)
         String videoUrl = "https://www.googleapis.com/youtube/v3/videos?part=snippet&id="
                 + idContent + "&key=" + apiKey;
@@ -231,63 +229,132 @@ public class YouTubeService {
     }
 
     // 댓글 입력 json 뽑기
-    public JsonObject get_data_comment(String channelId, String apiKey, String idContent, long offset) {
-        // YouTube API URL 설정 (최신 댓글 100개 가져오기)
+    public JsonObject get_data_comment(String apiKey, String videoId, long numChunk, long numRemainder) {
+        // YouTube API URL 설정 (댓글 목록 가져오기)
         String commentUrl = "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId="
-                + idContent + "&order=time&maxResults=100&key=" + apiKey;
+                + videoId + "&maxResults=100&key=" + apiKey;
+
+        List<String> comments = new ArrayList<>();
+        long totalFetched = 0;
+        String nextPageToken = null;
 
         // HttpClient 생성
         try (CloseableHttpClient client = HttpClients.createDefault()) {
-            // 댓글 요청
-            HttpGet commentRequest = new HttpGet(commentUrl);
-            HttpResponse commentResponse = client.execute(commentRequest);
-            BufferedReader commentReader = new BufferedReader(
-                    new InputStreamReader(commentResponse.getEntity().getContent(), "UTF-8"));
-            StringBuilder commentJsonResponse = new StringBuilder();
-            String line;
+            while (true) {
+                // 댓글 목록 요청 (페이지네이션 처리)
+                String paginatedUrl = nextPageToken == null ? commentUrl : commentUrl + "&pageToken=" + nextPageToken;
+                HttpGet commentRequest = new HttpGet(paginatedUrl);
+                HttpResponse commentResponse = client.execute(commentRequest);
+                BufferedReader commentReader = new BufferedReader(
+                        new InputStreamReader(commentResponse.getEntity().getContent(), "UTF-8"));
+                StringBuilder commentJsonResponse = new StringBuilder();
+                String line;
 
-            // 댓글 응답 읽기
-            while ((line = commentReader.readLine()) != null) {
-                commentJsonResponse.append(line);
+                // 응답 읽기
+                while ((line = commentReader.readLine()) != null) {
+                    commentJsonResponse.append(line);
+                }
+                commentReader.close();
+
+                // JSON 응답 파싱
+                JsonObject commentJsonObject = JsonParser.parseString(commentJsonResponse.toString()).getAsJsonObject();
+                JsonArray commentItems = commentJsonObject.getAsJsonArray("items");
+
+                // 최신 순 댓글 가져오기
+                for (JsonElement item : commentItems) {
+                    String commentText = item.getAsJsonObject().getAsJsonObject("snippet")
+                            .getAsJsonObject("topLevelComment").getAsJsonObject("snippet")
+                            .get("textDisplay").getAsString();
+                    comments.add(commentText);
+                    totalFetched++;
+
+                    // 필요 개수만큼 댓글을 수집
+                    if (totalFetched >= (numChunk * 100 + numRemainder)) {
+                        break;
+                    }
+                }
+
+                // 댓글 수가 충분하다면 종료
+                if (totalFetched >= (numChunk * 100 + numRemainder)) {
+                    break;
+                }
+
+                // 다음 페이지가 있다면, 다음 페이지로 이동
+                nextPageToken = commentJsonObject.has("nextPageToken")
+                        ? commentJsonObject.get("nextPageToken").getAsString()
+                        : null;
+                if (nextPageToken == null) {
+                    break; // 더 이상 댓글이 없으면 종료
+                }
             }
-            commentReader.close();
 
-            // JSON 응답 파싱
-            JsonElement commentElement = JsonParser.parseString(commentJsonResponse.toString());
-            JsonObject commentObject = commentElement.getAsJsonObject();
-            JsonArray comments = commentObject.getAsJsonArray("items");
-
-            // 댓글 텍스트만 추출하여 배열로 저장
-            ArrayList<String> textOriginalList = new ArrayList<>();
-            for (JsonElement item : comments) {
-                String textOriginal = item.getAsJsonObject().getAsJsonObject("snippet")
-                        .getAsJsonObject("topLevelComment").getAsJsonObject("snippet")
-                        .get("textOriginal").getAsString();
-                textOriginalList.add(textOriginal); // 텍스트만 배열에 추가
+            // 결과를 JSON 형태로 반환
+            JsonObject result = new JsonObject();
+            JsonArray commentArray = new JsonArray();
+            for (String comment : comments) {
+                commentArray.add(comment);
             }
+            result.add("comment", commentArray);
 
-            // JSON 형태로 출력 (속성명을 'data'로 변경)
-            JsonObject outputJson = new JsonObject();
-            outputJson.add("comment", new JsonArray());
-            for (String text : textOriginalList) {
-                outputJson.getAsJsonArray("comment").add(new JsonPrimitive(text));
+            // System.out.println("Number of comments: " + commentArray.size());
+
+            // 파일 생성 및 쓰기
+            String desktopPath = System.getProperty("user.home") + "/Desktop/";
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(desktopPath + "fileName"))) {
+                writer.write(result.toString());
+                System.out.println("JSON data saved to file: " + desktopPath + "fileName");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
-            // 출력
-            // System.out.println(outputJson.toString());
 
             // 반환
-            return outputJson;
+            return result;
 
-        } catch (IOException e) {
-            // IOException 처리
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
+    // 댓글 100개 단위의 청크 리스트로 재구성; 나머지 부분은 버림
+    public static List<JsonObject> splitJsonObject(JsonObject input, long numChunk, long remainder) {
+        List<JsonObject> result = new ArrayList<>();
+
+        // "comment" 배열을 가져오기
+        JsonArray commentArray = input.getAsJsonArray("comment");
+
+        // 100개의 아이템씩 담기
+        int totalChunks = (int) numChunk; // numChunk는 전체 chunk의 수 (100개씩 나눈 덩어리 수)
+        for (int i = 0; i < totalChunks; i++) {
+            JsonObject chunk = new JsonObject();
+            JsonArray chunkArray = new JsonArray();
+
+            // 한 chunk에 들어갈 인덱스를 계산
+            int startIdx = (int) (remainder + i * 100);
+            int endIdx = startIdx + 100;
+
+            for (int j = startIdx; j < endIdx; j++) {
+                chunkArray.add(commentArray.get(j));
+            }
+            chunk.add("comment", chunkArray);
+
+            // 파일 생성 및 쓰기
+            String desktopPath = System.getProperty("user.home") + "/Desktop/";
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(desktopPath + i + "chunk"))) {
+                writer.write(chunk.toString());
+                System.out.println("JSON data saved to file: " + desktopPath + i + "chunk");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            result.add(chunk);
+        }
+
+        return result;
+    }
+
     // 키워드 데이터 DB에 저장
-    public void setKeywordData(String channelId, String apiKey, String idContent, boolean isComment,
+    public void setKeywordData(String channelId, String idContent, boolean isComment,
             JsonObject inputJson) {
 
         KeywordDTO keywordDTO = new KeywordDTO();

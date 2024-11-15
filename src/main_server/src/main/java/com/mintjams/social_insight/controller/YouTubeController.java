@@ -53,7 +53,7 @@ public class YouTubeController {
         // 채널 DTO 값이 DB정보와 차이가 '있을' 경우에 아래 코드가 실행
 
         // DB 갱신 코드
-        youTubeService.checkUpdate(channelId, apiKey);
+        // youTubeService.checkUpdate(channelId, apiKey);
 
         // 워드클라우드 그래프 - 모든 키워드 상위 100개
         model.addAttribute("wordCloud", youTubeService.getWordCloudData(channelId));
@@ -65,7 +65,7 @@ public class YouTubeController {
         model.addAttribute("pieChart", youTubeService.getPieData(channelId));
 
         // 월벌 채널 변화량
-        //model.addAttribute("growthChart", youTubeService.getGrowthData(channelId));
+        // model.addAttribute("growthChart", youTubeService.getGrowthData(channelId));
 
         return "info";
     }

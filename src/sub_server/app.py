@@ -19,12 +19,8 @@ def detect_language(text):
     return translator.detect(text).lang
 
 
-def remove_special_characters(text):
+def clean_text(text):
     text = re.sub(r'[^\w\s\uAC00-\uD7A3\.\'\"\!\?]', '', text)
-    return text
-
-
-def remove_repeated_characters(text):
     text = re.sub(r'([ㄱ-ㅎㅏ-ㅣ])\1+', '', text)
     return text
 
@@ -50,8 +46,7 @@ def normalize_keyword(text):
 
 def content_keyword_process(json_data):
     combined_content = ' '.join(json_data['content'])  # 리스트를 문자열로 결합
-    combined_content = remove_special_characters(combined_content)
-    combined_content = remove_repeated_characters(combined_content)
+    combined_content = clean_text(combined_content)
     content_keywords = get_keywords(combined_content, num_keywords=3)
 
     keyword_result = []
@@ -71,8 +66,7 @@ def comment_keyword_process(json_data):
     keyword_counter = Counter()
     
     for comment in json_data['comment']:
-        comment = remove_special_characters(comment)
-        comment = remove_repeated_characters(comment)
+        comment = clean_text(comment)
         comment_keywords = get_keywords(comment, num_keywords=1)
         for keyword, _ in comment_keywords:
             if detect_language(keyword) == 'ko':
@@ -170,3 +164,4 @@ def save_keywords_to_json(keywords, filename="keywords.json"):
 
 if __name__ == '__main__':
     app.run(debug=True)
+    

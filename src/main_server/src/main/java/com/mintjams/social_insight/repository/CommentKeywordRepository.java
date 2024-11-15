@@ -18,7 +18,6 @@ public interface CommentKeywordRepository extends JpaRepository<CommentKeyword, 
     //누적
     Optional<CommentKeyword> findByCommentKeyAndChannelAndContent(String contentKey, Channel channel, Content content);
 
-
     //8개만
     @Query(value = "SELECT ck.comment_Key, ck.found FROM Comment_Keyword ck WHERE ck.channel_Id = :channelId ORDER BY ck.found DESC LIMIT 8", nativeQuery = true)
     List<Object[]> findTop8ByChannelIdAndCommentIdOrderByFoundDesc(@Param("channelId") String channelId);

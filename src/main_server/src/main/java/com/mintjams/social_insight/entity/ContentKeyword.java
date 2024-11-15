@@ -19,6 +19,7 @@ public class ContentKeyword {
     @JoinColumn(name = "channel_id")
     private Channel channel;
 
+
     @Column
     private String contentKey;
 

@@ -34,7 +34,22 @@ public class Channel {
     private LocalDateTime updatedAt;
 
     @Column
-    private Integer AnchorNum;
+    private Integer anchorNum = 0;
+
+
+    // 엔티티가 처음 저장될 때 호출되는 메서드
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+    }
+
+    // 엔티티가 수정될 때 호출되는 메서드
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now(); // 마지막 수정 시간 갱신
+    }
 
 
 }

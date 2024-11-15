@@ -37,6 +37,109 @@ public class YouTubeService {
     private final ChannelRepository channelRepository;
     private final ContentRepository contentRepository;
 
+    //채널 ID 조회
+    public boolean isChannelIdExists(String channelId) {
+        return channelRepository.existsById(channelId);
+    }
+
+    public void saveChannelData(ChannelDTO channelDTO, String apiKey) {
+
+        String channelId = channelDTO.getChannelId();
+
+        Channel channel = new Channel();
+        channel.setChannelId(channelDTO.getChannelId());
+        channel.setContentNum(channelDTO.getContentNum());
+        channelRepository.save(channel);
+
+//        // 분석 지표; 비디오 ID 및 댓글 수 리스트 만들기
+//        List<String> ls_idContent = new ArrayList<>();
+//        List<Integer> ls_numFullCommentPage = new ArrayList<>();
+
+
+        try {
+            // 채널의 모든 비디오 목록 가져오기 (일단 2개)
+            String videoListUrl = "https://www.googleapis.com/youtube/v3/search?key=" + apiKey + "&channelId="
+                    + channelId + "&part=snippet&type=video&maxResults=2"; // maxResults를 2로 설정
+
+            List<JsonObject> allVideos = new ArrayList<>();
+            String nextPageToken = null;
+
+            while (true) {
+                // 페이지네이션 처리: 다음 페이지가 있다면, nextPageToken을 URL에 추가
+                String paginatedUrl = nextPageToken == null ? videoListUrl
+                        : videoListUrl + "&pageToken=" + nextPageToken;
+
+                // HTTP 요청 및 응답 처리
+                URL url = new URL(paginatedUrl);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+
+                // JSON 응답 파싱
+                JsonObject responseJson = JsonParser.parseString(response.toString()).getAsJsonObject();
+                JsonArray items = responseJson.getAsJsonArray("items");
+
+                // 동영상 정보 수집
+                for (JsonElement item : items) {
+                    allVideos.add(item.getAsJsonObject());
+                }
+
+                // 다음 페이지가 있다면 nextPageToken을 가져오고, 없으면 종료
+                nextPageToken = responseJson.has("nextPageToken")
+                        ? responseJson.get("nextPageToken").getAsString()
+                        : null;
+
+                JsonObject inputJson;
+                // 각 비디오에 대해 댓글 페이지 수 가져오기
+                for (int i = 0; i < items.size(); i++) {
+                    JsonObject video = items.get(i).getAsJsonObject();
+                    String videoId = video.getAsJsonObject("id").get("videoId").getAsString();
+
+                    Integer commentCount = getCommentFullPageCount(apiKey, videoId);
+                    // remainder
+
+//                    // videoId와 commentCount를 List에 저장
+//                    ls_idContent.add(videoId);
+//                    ls_numFullCommentPage.add(commentCount);
+
+                    // 콘텐츠 정보 DB에 등록
+                    Content content = new Content();
+                    if (!contentRepository.existsById(videoId)) {
+                        content.setContentId(videoId);
+                        //content.setCommentNum(commentCount);
+                        //테스트 값
+                        content.setCommentNum(0);
+                        content.setChannel(channel);
+                        contentRepository.save(content);
+
+                        // 본문 분석 작업 요청
+                        inputJson = get_data_content(apiKey, channelId, videoId);
+                        addTaskToQueue(channelId, videoId, false, inputJson);
+
+
+                    }
+                }
+
+                if (nextPageToken == null) {
+                    break; // 더 이상 페이지가 없으면 종료
+                } else {
+                    break; // 일단 한페이지만 받아보자 (5개)
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
     // 채널데이터 가져오기
     public ChannelDTO getChannelData(String channelTitle, String apiKey) {
         ChannelDTO channelDTO = new ChannelDTO();
@@ -129,89 +232,95 @@ public class YouTubeService {
                 channelDTO.setChannelUrl(_channelUrl);
                 channelDTO.setCreatedAt(_publishedAt);
                 channelDTO.setSubscriberCount(_subscriberCount);
-                channelDTO.setNumContent(_videoCount);
+                channelDTO.setContentNum(_videoCount);
                 channelDTO.setChannelThumbnail(_channelThumbnail);
 
-                // 채널ID DB갱신
-                Channel channel = new Channel();
-                channel.setChannelId(channelId);
-                channelRepository.save(channel);
 
-                // 분석 지표; 비디오 ID 및 댓글 수 리스트 만들기
-                List<String> ls_idContent = new ArrayList<>();
-                List<Integer> ls_numFullCommentPage = new ArrayList<>();
+//                // 채널ID가 DB에 없으면 DB갱신 --> 나중에 최적화
+//                Channel channel = new Channel();
+//               // if (!channelRepository.existsById(channelId)) {
+//                    channel.setChannelId(channelId);
+//                    channelRepository.save(channel);
+//                //}
 
-                try {
-                    // 채널의 모든 비디오 목록 가져오기 (일단 2개)
-                    String videoListUrl = "https://www.googleapis.com/youtube/v3/search?key=" + apiKey + "&channelId="
-                            + channelId + "&part=snippet&type=video&maxResults=2"; // maxResults를 2로 설정
-
-                    List<JsonObject> allVideos = new ArrayList<>();
-                    String nextPageToken = null;
-
-                    while (true) {
-                        // 페이지네이션 처리: 다음 페이지가 있다면, nextPageToken을 URL에 추가
-                        String paginatedUrl = nextPageToken == null ? videoListUrl
-                                : videoListUrl + "&pageToken=" + nextPageToken;
-
-                        // HTTP 요청 및 응답 처리
-                        URL url = new URL(paginatedUrl);
-                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                        connection.setRequestMethod("GET");
-
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                        StringBuilder response = new StringBuilder();
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            response.append(line);
-                        }
-                        reader.close();
-
-                        // JSON 응답 파싱
-                        JsonObject responseJson = JsonParser.parseString(response.toString()).getAsJsonObject();
-                        JsonArray items = responseJson.getAsJsonArray("items");
-
-                        // 동영상 정보 수집
-                        for (JsonElement item : items) {
-                            allVideos.add(item.getAsJsonObject());
-                        }
-
-                        // 다음 페이지가 있다면 nextPageToken을 가져오고, 없으면 종료
-                        nextPageToken = responseJson.has("nextPageToken")
-                                ? responseJson.get("nextPageToken").getAsString()
-                                : null;
-
-                        // 각 비디오에 대해 댓글 페이지 수 가져오기
-                        for (int i = 0; i < items.size(); i++) {
-                            JsonObject video = items.get(i).getAsJsonObject();
-                            String videoId = video.getAsJsonObject("id").get("videoId").getAsString();
-
-                            Integer commentCount = getCommentFullPageCount(apiKey, videoId);
-                            // remainder
-
-                            // videoId와 commentCount를 List에 저장
-                            ls_idContent.add(videoId);
-                            ls_numFullCommentPage.add(commentCount);
-
-                            // 콘텐츠 정보 DB에 등록
-                            Content content = new Content();
-                            content.setContentId(videoId);
-                            content.setChannel(channel);
-                            contentRepository.save(content);
-                        }
-
-                        if (nextPageToken == null) {
-                            break; // 더 이상 페이지가 없으면 종료
-                        } else {
-                            break; // 일단 한페이지만 받아보자 (5개)
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                // 분석 소요 체크
-                checkUpdate(apiKey, channel, ls_idContent, ls_numFullCommentPage);
+//                // 분석 지표; 비디오 ID 및 댓글 수 리스트 만들기
+//                List<String> ls_idContent = new ArrayList<>();
+//                List<Integer> ls_numFullCommentPage = new ArrayList<>();
+//
+//                try {
+//                    // 채널의 모든 비디오 목록 가져오기 (일단 2개)
+//                    String videoListUrl = "https://www.googleapis.com/youtube/v3/search?key=" + apiKey + "&channelId="
+//                            + channelId + "&part=snippet&type=video&maxResults=2"; // maxResults를 2로 설정
+//
+//                    List<JsonObject> allVideos = new ArrayList<>();
+//                    String nextPageToken = null;
+//
+//                    while (true) {
+//                        // 페이지네이션 처리: 다음 페이지가 있다면, nextPageToken을 URL에 추가
+//                        String paginatedUrl = nextPageToken == null ? videoListUrl
+//                                : videoListUrl + "&pageToken=" + nextPageToken;
+//
+//                        // HTTP 요청 및 응답 처리
+//                        URL url = new URL(paginatedUrl);
+//                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+//                        connection.setRequestMethod("GET");
+//
+//                        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+//                        StringBuilder response = new StringBuilder();
+//                        String line;
+//                        while ((line = reader.readLine()) != null) {
+//                            response.append(line);
+//                        }
+//                        reader.close();
+//
+//                        // JSON 응답 파싱
+//                        JsonObject responseJson = JsonParser.parseString(response.toString()).getAsJsonObject();
+//                        JsonArray items = responseJson.getAsJsonArray("items");
+//
+//                        // 동영상 정보 수집
+//                        for (JsonElement item : items) {
+//                            allVideos.add(item.getAsJsonObject());
+//                        }
+//
+//                        // 다음 페이지가 있다면 nextPageToken을 가져오고, 없으면 종료
+//                        nextPageToken = responseJson.has("nextPageToken")
+//                                ? responseJson.get("nextPageToken").getAsString()
+//                                : null;
+//
+//                        // 각 비디오에 대해 댓글 페이지 수 가져오기
+//                        for (int i = 0; i < items.size(); i++) {
+//                            JsonObject video = items.get(i).getAsJsonObject();
+//                            String videoId = video.getAsJsonObject("id").get("videoId").getAsString();
+//
+//                            Integer commentCount = getCommentFullPageCount(apiKey, videoId);
+//                            // remainder
+//
+//                            // videoId와 commentCount를 List에 저장
+//                            ls_idContent.add(videoId);
+//                            ls_numFullCommentPage.add(commentCount);
+//
+//                            // 콘텐츠 정보 DB에 등록
+//                            Content content = new Content();
+//                          if (!contentRepository.existsById(videoId)) {
+//                                content.setContentId(videoId);
+//                                content.setCommentNum(commentCount);
+//                                content.setChannel(channel);
+//                                contentRepository.save(content);
+//                            }
+//                        }
+//
+//                        if (nextPageToken == null) {
+//                            break; // 더 이상 페이지가 없으면 종료
+//                        } else {
+//                            break; // 일단 한페이지만 받아보자 (5개)
+//                        }
+//                    }
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//
+//                // 분석 소요 체크
+//                checkUpdate(apiKey, channel, ls_idContent, ls_numFullCommentPage);
             }
 
             client.close();
@@ -279,17 +388,104 @@ public class YouTubeService {
         }
     }
 
-    // 분석 소요 파악
-    public void checkUpdate(String apiKey, Channel channel, List<String> ls_new_idContent,
-            List<Integer> ls_new_numFullCommentPage) {
+    // 기존에 데이터가 있는 경우 분석 소요 파악
+    public void checkUpdate(String apiKey, String channelId /*, List<String> ls_new_idContent, List<Integer> ls_new_numFullCommentPage*/) {
 
-        String channelId = channel.getChannelId();
+
+        //앵커 증가시키는 건데 이상하게 증가가 안됨.
+        Channel channel = channelRepository.findById(channelId)
+                        .orElseThrow(() -> new RuntimeException("Channel not found with id: " + channelId));
+        Integer anchorNum = channel.getAnchorNum();
+        //앵커 1 증가
+        channel.setAnchorNum(anchorNum+1);
+        channelRepository.save(channel);
+
+
+        // 분석 지표; 비디오 ID 및 댓글 수 리스트 만들기
+        List<String> ls_new_idContent = new ArrayList<>();
+        List<Integer> ls_new_numFullCommentPage = new ArrayList<>();
+
+        try {
+            // 채널의 모든 비디오 목록 가져오기 (일단 2개)
+            String videoListUrl = "https://www.googleapis.com/youtube/v3/search?key=" + apiKey + "&channelId="
+                    + channelId + "&part=snippet&type=video&maxResults=2"; // maxResults를 2로 설정
+
+            List<JsonObject> allVideos = new ArrayList<>();
+            String nextPageToken = null;
+
+            while (true) {
+                // 페이지네이션 처리: 다음 페이지가 있다면, nextPageToken을 URL에 추가
+                String paginatedUrl = nextPageToken == null ? videoListUrl
+                        : videoListUrl + "&pageToken=" + nextPageToken;
+
+                // HTTP 요청 및 응답 처리
+                URL url = new URL(paginatedUrl);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+
+                // JSON 응답 파싱
+                JsonObject responseJson = JsonParser.parseString(response.toString()).getAsJsonObject();
+                JsonArray items = responseJson.getAsJsonArray("items");
+
+                // 동영상 정보 수집
+                for (JsonElement item : items) {
+                    allVideos.add(item.getAsJsonObject());
+                }
+
+                // 다음 페이지가 있다면 nextPageToken을 가져오고, 없으면 종료
+                nextPageToken = responseJson.has("nextPageToken")
+                        ? responseJson.get("nextPageToken").getAsString()
+                        : null;
+
+                // 각 비디오에 대해 댓글 페이지 수 가져오기
+                for (int i = 0; i < items.size(); i++) {
+                    JsonObject video = items.get(i).getAsJsonObject();
+                    String videoId = video.getAsJsonObject("id").get("videoId").getAsString();
+
+                    Integer commentCount = getCommentFullPageCount(apiKey, videoId);
+                    // remainder
+
+                    // videoId와 commentCount를 List에 저장
+                    ls_new_idContent.add(videoId);
+                    ls_new_numFullCommentPage.add(commentCount);
+
+                }
+
+                if (nextPageToken == null) {
+                    break; // 더 이상 페이지가 없으면 종료
+                } else {
+                    break; // 일단 한페이지만 받아보자 (5개)
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // DB에서 관리 중인 정보 불러오기
         // DB에 저장된; 해당 채널의 콘텐츠 id들
         List<String> ls_db_idContent = contentRepository.findContentIdsByChannelId(channelId);
         // DB에 저장된; 콘텐츠들의 댓글 갯수 (위 리스트와 인덱스 같음)
         List<Integer> ls_db_numFullCommentPage = contentRepository.findCommentNumsByChannelId(channelId);
+
+        System.out.println("ls_db_idContent출력");
+        // 또는 for-each 루프를 사용하여 각 항목을 출력
+        for (String s : ls_db_idContent) {
+            System.out.println(s);
+        }
+
+        System.out.println("ls_db_numFullCommentPage출력");
+        // 또는 for-each 루프를 사용하여 각 항목을 출력
+        for (Integer num : ls_db_numFullCommentPage) {
+            System.out.println(num);
+        }
 
         JsonObject inputJson;
         List<JsonObject> commentChunk;
@@ -302,19 +498,13 @@ public class YouTubeService {
             // 댓글 분석 시작할 지점 (100개 단위)
             Integer offset = 0;
 
-            if (ls_db_idContent.indexOf(theId) < 0) {
-                offset = 0;
-                // 새로 추가된 콘텐츠임
-                // 본문 분석 작업 요청
-                inputJson = get_data_content(apiKey, channelId, theId);
-                addTaskToQueue(channelId, theId, false, inputJson);
-            } else {
+
                 if (ls_db_numFullCommentPage.get(ls_db_idContent.indexOf(theId)) == null) {
                     offset = 0;
                 } else {
                     offset = ls_db_numFullCommentPage.get(ls_db_idContent.indexOf(theId));
                 }
-            }
+
 
             // 추가된 댓글 묶음 수
             Integer newHundreds = ls_new_numFullCommentPage.get(i) - offset;
@@ -340,11 +530,12 @@ public class YouTubeService {
                 System.out.println(i + " " + j);
             }
 
-            Content content = new Content();
-            content.setContentId(ls_new_idContent.get(i));
+            //업데이트
+            Content content = contentRepository.findById(ls_new_idContent.get(i))
+                    .orElseThrow(() -> new RuntimeException("Content not found with id"));
             content.setCommentNum(offset);
-            content.setChannel(channel);
             contentRepository.save(content);
+
         }
 
         // DB 갱신; 추가된 콘텐츠들
@@ -681,6 +872,8 @@ public class YouTubeService {
 
     }
 
+
+
     // 워드클라우드 그래프 - 모든 키워드 상위 100개
     public WordCloudDTO getWordCloudData(String channelId) {
 
@@ -795,5 +988,10 @@ public class YouTubeService {
             return null;
         }
     }
+
+
+
+
+
 
 }

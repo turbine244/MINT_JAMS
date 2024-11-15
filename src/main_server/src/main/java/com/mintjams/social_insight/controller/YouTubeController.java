@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 public class YouTubeController {
@@ -19,7 +20,6 @@ public class YouTubeController {
     // Constructor injection for the service
     @Autowired
     public YouTubeController(YouTubeService youTubeService) {
-
         this.youTubeService = youTubeService;
     }
 
@@ -42,18 +42,14 @@ public class YouTubeController {
         // 채널 ID 저장하기
         String channelId = channelDTO.getChannelId();
 
-        // 채널 DTO 값이 DB정보와 차이가 '없을' 경우에는, DB정보만 끌고 오면 됨
+        //채널 ID 조회
+        if (!(youTubeService.isChannelIdExists(channelId))) {
+            //채널 ID가 존재하지 않을 경우 -> Channel과 Content DB에 새로운 정보를 저장
+            youTubeService.saveChannelData(channelDTO, apiKey);
+        }
 
-        /*
-         *
-         * 채널 DTO와 DB 비교 코드 구현 전
-         *
-         */
-
-        // 채널 DTO 값이 DB정보와 차이가 '있을' 경우에 아래 코드가 실행
-
-        // DB 갱신 코드
-        // youTubeService.checkUpdate(channelId, apiKey);
+        // checkUpdate -> 경우 상관 없이 일단 돌리는 것으로 변경
+        youTubeService.checkUpdate(apiKey, channelId);
 
         // 워드클라우드 그래프 - 모든 키워드 상위 100개
         model.addAttribute("wordCloud", youTubeService.getWordCloudData(channelId));

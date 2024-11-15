@@ -25,7 +25,6 @@ public class Content {
     @Column
     private Integer commentNum;
 
-
 }
 
 

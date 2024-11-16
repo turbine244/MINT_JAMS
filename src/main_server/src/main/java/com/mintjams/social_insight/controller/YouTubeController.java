@@ -37,7 +37,6 @@ public class YouTubeController {
 
         // 채널 정보 가져오기
         ChannelDTO channelDTO = youTubeService.getChannelData(channelTitle, apiKey);
-        model.addAttribute("channel", channelDTO);
 
         // 채널 ID 저장하기
         String channelId = channelDTO.getChannelId();
@@ -50,6 +49,10 @@ public class YouTubeController {
 
         // checkUpdate -> 경우 상관 없이 일단 돌리는 것으로 변경
         youTubeService.checkUpdate(apiKey, channelId);
+
+        channelDTO = youTubeService.getChannelDBData(channelDTO);
+
+        model.addAttribute("channel", channelDTO);
 
         // 워드클라우드 그래프 - 모든 키워드 상위 100개
         model.addAttribute("wordCloud", youTubeService.getWordCloudData(channelId));

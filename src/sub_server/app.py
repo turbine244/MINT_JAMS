@@ -57,7 +57,8 @@ def remove_english_stopwords(keyword):
     # 영어의 불필요한 단어 목록 (연결부사와 관사)
     stopwords = {"the", "and", "or", "but", "however", "therefore", "moreover", "furthermore", 
                  "thus", "meanwhile", "instead", "nevertheless", "otherwise", "also", "yet", "so", 
-                 "a", "an", "this", "that", "he", "him", "she", "her", "they", "them"}
+                 "a", "an", "this", "that", "he", "him", "she", "her", "they", "them", "is", "am",
+                "are", "was", "were", "in", "on", "at", "by", "for"}
     # 키워드가 불필요한 단어라면 빈 문자열 반환
     return "" if keyword.lower() in stopwords else keyword
 

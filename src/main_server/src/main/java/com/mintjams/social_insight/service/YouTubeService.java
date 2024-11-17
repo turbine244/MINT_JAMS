@@ -39,17 +39,19 @@ public class YouTubeService {
     private final ChannelRepository channelRepository;
     private final ContentRepository contentRepository;
 
-    //채널 ID 조회
+    private final FlaskQueueService taskQueueService;
+
+    // 채널 ID 조회
     public boolean isChannelIdExists(String channelId) {
         return channelRepository.existsById(channelId);
     }
 
-    //처음 데이터를 받아올 때 채널/콘텐츠/콘텐츠 키워드 데이터를 저장
+    // 처음 데이터를 받아올 때 채널/콘텐츠/콘텐츠 키워드 데이터를 저장
     public void saveChannelData(ChannelDTO channelDTO, String apiKey) {
 
         String channelId = channelDTO.getChannelId();
 
-        //채널 DB 신규 갱신
+        // 채널 DB 신규 갱신
         Channel channel = new Channel();
         channel.setChannelId(channelDTO.getChannelId());
         channel.setContentNum(channelDTO.getContentNum());
@@ -105,8 +107,8 @@ public class YouTubeService {
                     Content content = new Content();
                     if (!contentRepository.existsById(videoId)) {
                         content.setContentId(videoId);
-                        //content.setCommentNum(commentCount);
-                        //테스트 값
+                        // content.setCommentNum(commentCount);
+                        // 테스트 값
                         content.setCommentNum(0);
                         content.setChannel(channel);
                         contentRepository.save(content);
@@ -129,7 +131,6 @@ public class YouTubeService {
         }
 
     }
-
 
     // 채널데이터 가져오기
     public ChannelDTO getChannelData(String channelTitle, String apiKey) {
@@ -187,6 +188,8 @@ public class YouTubeService {
             JsonObject channelInfoJsonObject = channelInfoJsonElement.getAsJsonObject();
             JsonArray channelInfoItems = channelInfoJsonObject.getAsJsonArray("items");
 
+            System.out.println("gogogogogo");
+
             if (channelInfoItems.size() > 0) {
                 JsonObject channelSnippet = channelInfoItems.get(0).getAsJsonObject().getAsJsonObject("snippet");
                 JsonObject channelStatistics = channelInfoItems.get(0).getAsJsonObject().getAsJsonObject("statistics");
@@ -216,6 +219,8 @@ public class YouTubeService {
                         .get("high").getAsJsonObject()
                         .get("url").getAsString(); // 프로필 이미지 URL
 
+                System.out.println("gogogogogo2");
+
                 // DTO에 데이터 설정
                 channelDTO.setChannelId(channelId);
 
@@ -226,6 +231,7 @@ public class YouTubeService {
                 channelDTO.setContentNum(_videoCount);
                 channelDTO.setChannelThumbnail(_channelThumbnail);
 
+                System.out.println("gogogogogo3");
             }
 
             client.close();
@@ -294,15 +300,14 @@ public class YouTubeService {
     }
 
     // 기존에 데이터가 있는 경우 분석 소요 파악
-    public void checkUpdate(String apiKey, String channelId /*, List<String> ls_new_idContent, List<Integer> ls_new_numFullCommentPage*/) {
+    public void checkUpdate(String channelId, String apiKey) {
 
-        //앵커 증가
+        // 앵커 증가
         Channel channel = channelRepository.findById(channelId)
-                        .orElseThrow(() -> new RuntimeException("Channel not found with id: " + channelId));
+                .orElseThrow(() -> new RuntimeException("Channel not found with id: " + channelId));
         Integer anchorNum = channel.getAnchorNum();
-        channel.setAnchorNum(anchorNum+1);
+        channel.setAnchorNum(anchorNum + 1);
         channelRepository.save(channel);
-
 
         // 분석 지표; 비디오 ID 및 댓글 수 리스트 만들기
         List<String> ls_new_idContent = new ArrayList<>();
@@ -398,12 +403,12 @@ public class YouTubeService {
             // 분석할 콘텐츠의 ID
             String theId = ls_new_idContent.get(i);
 
-            //만약 theId가 기존 DB에 없으면 DB에 등록하고 본문 분석 작업 요청
+            // 만약 theId가 기존 DB에 없으면 DB에 등록하고 본문 분석 작업 요청
             if (!contentRepository.existsById(theId)) {
                 Content content = new Content();
                 content.setContentId(theId);
-                //content.setCommentNum(commentCount);
-                //테스트 값
+                // content.setCommentNum(commentCount);
+                // 테스트 값
                 content.setCommentNum(0);
                 content.setChannel(channel);
                 contentRepository.save(content);
@@ -416,13 +421,11 @@ public class YouTubeService {
             // 댓글 분석 시작할 지점 (100개 단위)
             Integer offset = 0;
 
-
             if (ls_db_numFullCommentPage.get(ls_db_idContent.indexOf(theId)) == null) {
                 offset = 0;
             } else {
                 offset = ls_db_numFullCommentPage.get(ls_db_idContent.indexOf(theId));
             }
-
 
             // 추가된 댓글 묶음 수
             Integer newHundreds = ls_new_numFullCommentPage.get(i) - offset;
@@ -441,9 +444,9 @@ public class YouTubeService {
             commentChunk = splitJsonObject(inputJson, newHundreds, remainder);
             System.out.println("뒤");
 
-            //!!!!!!!!임시 수정사항!!!!!!!!! - 조수정
-            //newHundreds가 너무 많으면 오래 걸려서, 10 이상이면 10으로 고정해둠...
-            if(newHundreds>10){
+            // !!!!!!!!임시 수정사항!!!!!!!!! - 조수정
+            // newHundreds가 너무 많으면 오래 걸려서, 10 이상이면 10으로 고정해둠...
+            if (newHundreds > 10) {
                 newHundreds = 10;
             }
 
@@ -454,7 +457,7 @@ public class YouTubeService {
                 System.out.println(i + " " + j);
             }
 
-            //업데이트
+            // 업데이트
             Content content = contentRepository.findById(ls_new_idContent.get(i))
                     .orElseThrow(() -> new RuntimeException("Content not found with id"));
             content.setCommentNum(offset);
@@ -796,8 +799,6 @@ public class YouTubeService {
 
     }
 
-
-
     // 워드클라우드 그래프 - 모든 키워드 상위 100개
     public WordCloudDTO getWordCloudData(String channelId) {
 
@@ -865,10 +866,9 @@ public class YouTubeService {
 
     // 작업 큐에 추가
     void addTaskToQueue(String channelId, String idContent, boolean isComment, JsonObject inputJson) {
-        // Runnable task = () -> setKeywordData(channelId, apiKey, idContent, isComment,
-        // inputJson);
-        // taskQueueService.addTask(task);
-        setKeywordData(channelId, idContent, isComment, inputJson);
+        Runnable task = () -> setKeywordData(channelId, idContent, isComment, inputJson);
+        taskQueueService.addTask(task);
+        System.err.println("!!!작업 추가됨");
     }
 
     ////// 임시임시임시임시

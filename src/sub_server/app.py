@@ -7,22 +7,22 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import requests  # 서버와 통신하기 위해 사용
 from flask_cors import CORS
 import json
-import re
 
 
 app = Flask(__name__)
 CORS(app)
 
-
 def detect_language(text):
+    if not text or not isinstance(text, str) or text.strip() == "":
+        return "unknown"
+
     translator = Translator()
-    return translator.detect(text).lang
-
-
-def clean_text(text):
-    text = re.sub(r'[^\w\s\uAC00-\uD7A3\.\'\"\!\?]', '', text)
-    text = re.sub(r'([ㄱ-ㅎㅏ-ㅣ])\1+', '', text)
-    return text
+    try:
+        detected_lang = translator.detect(text).lang
+        return detected_lang
+    except Exception as e:
+        print(f"Error detecting language: {e}")
+        return "unknown"
 
 
 def translate_korean_to_english(text):
@@ -31,27 +31,27 @@ def translate_korean_to_english(text):
     return translated.text
 
 
-def get_keywords(text, num_keywords=1):
-    keyword_extractor = yake.KeywordExtractor(n=1, top=num_keywords)
+def get_keywords(text, lang='en', num_keywords=1):
+    keyword_extractor = yake.KeywordExtractor(lan=lang, n=1, top=num_keywords)
     keywords = keyword_extractor.extract_keywords(text)
     return keywords
 
 
-def normalize_keyword(text):
+def normalize_keyword(keyword):
     okt = Okt()
-    words = okt.pos(text, norm=True, stem=True)  # 품사 태깅 (형태소 분석)
-    cleaned_text = "".join(word for word, pos in words if pos != "Josa")  # 조사(Josa)인 부분만 제거
-    return cleaned_text
+    # 어간 추출로 기본형을 찾기
+    normalized = okt.morphs(keyword, stem=True)
+    return ''.join(normalized)  # 기본형 단어들로 변환
 
 
 def content_keyword_process(json_data):
     combined_content = ' '.join(json_data['content'])  # 리스트를 문자열로 결합
-    combined_content = clean_text(combined_content)
-    content_keywords = get_keywords(combined_content, num_keywords=3)
+    content_lang = detect_language(combined_content)
+    content_keywords = get_keywords(combined_content, lang=content_lang, num_keywords=3)
 
     keyword_result = []
     for keyword, _ in content_keywords:
-        if detect_language(keyword) == 'ko':
+        if content_lang == 'ko':
             keyword = normalize_keyword(keyword)  # 한국어 기본형 변환
         keyword_result.append({"keyword": keyword, "found": 1})  # 'found' 값을 1로 설정
 
@@ -63,13 +63,14 @@ def content_keyword_process(json_data):
 
 
 def comment_keyword_process(json_data):
+    combined_comment = ' '.join(json_data['comment'])  # 리스트를 문자열로 결합
+    comment_lang = detect_language(combined_comment)
     keyword_counter = Counter()
     
     for comment in json_data['comment']:
-        comment = clean_text(comment)
-        comment_keywords = get_keywords(comment, num_keywords=1)
+        comment_keywords = get_keywords(comment, lang=comment_lang, num_keywords=1)
         for keyword, _ in comment_keywords:
-            if detect_language(keyword) == 'ko':
+            if comment_lang == 'ko':
                 keyword = normalize_keyword(keyword)  # 기본형으로 변환
             keyword_counter[keyword] += 1
 

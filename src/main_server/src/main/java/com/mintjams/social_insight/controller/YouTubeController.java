@@ -2,6 +2,7 @@ package com.mintjams.social_insight.controller;
 
 import com.mintjams.social_insight.dto.ChannelDTO;
 import com.mintjams.social_insight.dto.KeywordDTO;
+import com.mintjams.social_insight.service.FlaskQueueService;
 import com.mintjams.social_insight.service.YouTubeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -16,11 +17,13 @@ import java.util.Objects;
 public class YouTubeController {
 
     private final YouTubeService youTubeService;
+    private final FlaskQueueService taskQueueService;
 
     // Constructor injection for the service
     @Autowired
-    public YouTubeController(YouTubeService youTubeService) {
+    public YouTubeController(YouTubeService youTubeService, FlaskQueueService taskQueueService) {
         this.youTubeService = youTubeService;
+        this.taskQueueService = taskQueueService;
     }
 
     // 기본
@@ -33,7 +36,7 @@ public class YouTubeController {
     @PostMapping("/search")
     public String info(@RequestParam("channelTitle") String channelTitle, Model model) {
 
-        String apiKey = "AIzaSyBOnvoVM2O60KA30ReM-No_OzcvQjjk68w"; // API 키
+        String apiKey = "AIzaSyAlR7JJ-b8yB_oaid6UVJZ_moFgRNW7bXQ"; // API 키
 
         // 채널 정보 가져오기
         ChannelDTO channelDTO = youTubeService.getChannelData(channelTitle, apiKey);
@@ -41,14 +44,15 @@ public class YouTubeController {
         // 채널 ID 저장하기
         String channelId = channelDTO.getChannelId();
 
-        //채널 ID 조회
+        // 채널 ID 조회
         if (!(youTubeService.isChannelIdExists(channelId))) {
-            //채널 ID가 존재하지 않을 경우 -> Channel과 Content DB에 새로운 정보를 저장
+            // 채널 ID가 존재하지 않을 경우 -> Channel과 Content DB에 새로운 정보를 저장
             youTubeService.saveChannelData(channelDTO, apiKey);
         }
 
-        // checkUpdate -> 경우 상관 없이 일단 돌리는 것으로 변경
-        youTubeService.checkUpdate(apiKey, channelId);
+        System.out.println("채널 업데이트 작업 시작: " + channelId);
+        youTubeService.checkUpdate(channelId, apiKey); // DB 갱신 코드
+        System.out.println("채널 업데이트 작업 완료: " + channelId);
 
         channelDTO = youTubeService.getChannelDBData(channelDTO);
 

@@ -7,10 +7,12 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import requests  # 서버와 통신하기 위해 사용
 from flask_cors import CORS
 import json
+import re
 
 
 app = Flask(__name__)
 CORS(app)
+
 
 def detect_language(text):
     if not text or not isinstance(text, str) or text.strip() == "":
@@ -25,35 +27,64 @@ def detect_language(text):
         return "unknown"
 
 
+
 def translate_korean_to_english(text):
     translator = Translator()
     translated = translator.translate(text, src='ko', dest='en')
     return translated.text
 
 
-def get_keywords(text, lang='en', num_keywords=1):
-    keyword_extractor = yake.KeywordExtractor(lan=lang, n=1, top=num_keywords)
+def get_keywords(text, num_keywords=1):
+    keyword_extractor = yake.KeywordExtractor(n=1, top=num_keywords)
     keywords = keyword_extractor.extract_keywords(text)
     return keywords
 
 
-def normalize_keyword(keyword):
+def clean_text(text):
+    text = re.sub(r'[^\w\s\uAC00-\uD7A3\.\'\"\!\?]', '', text)
+    text = re.sub(r'([ㄱ-ㅎㅏ-ㅣ])\1+', '', text)
+    return text
+
+
+def normalize_keyword(text):
     okt = Okt()
-    # 어간 추출로 기본형을 찾기
-    normalized = okt.morphs(keyword, stem=True)
-    return ''.join(normalized)  # 기본형 단어들로 변환
+    words = okt.pos(text, norm=True, stem=True)  # 품사 태깅 (형태소 분석)
+    cleaned_text = "".join(word for word, pos in words if pos != "Josa")  # 조사(Josa)인 부분만 제거
+    return cleaned_text
+
+
+def remove_english_stopwords(keyword):
+    # 영어의 불필요한 단어 목록 (연결부사와 관사)
+    stopwords = {"the", "and", "or", "but", "however", "therefore", "moreover", "furthermore", 
+                 "thus", "meanwhile", "instead", "nevertheless", "otherwise", "also", "yet", "so", 
+                 "a", "an", "this", "that", "he", "him", "she", "her", "they", "them"}
+    # 키워드가 불필요한 단어라면 빈 문자열 반환
+    return "" if keyword.lower() in stopwords else keyword
 
 
 def content_keyword_process(json_data):
     combined_content = ' '.join(json_data['content'])  # 리스트를 문자열로 결합
-    content_lang = detect_language(combined_content)
-    content_keywords = get_keywords(combined_content, lang=content_lang, num_keywords=3)
+    content_keywords = get_keywords(combined_content, num_keywords=10)
 
     keyword_result = []
     for keyword, _ in content_keywords:
-        if content_lang == 'ko':
+        keyword = clean_text(keyword)
+        if not keyword:  
+            continue
+
+        if detect_language(keyword) == 'ko':
             keyword = normalize_keyword(keyword)  # 한국어 기본형 변환
+        elif detect_language(keyword) == 'en':
+            keyword = remove_english_stopwords(keyword)  # 영어 불필요한 단어 제거
+            if not keyword:  # 불필요한 단어 제거 후 키워드가 비었으면 넘어감
+                continue
+            # 영어 키워드 첫 글자만 대문자로, 나머지 소문자로 변경
+            keyword = keyword[0].upper() + keyword[1:].lower()
+
         keyword_result.append({"keyword": keyword, "found": 1})  # 'found' 값을 1로 설정
+
+        if len(keyword_result) == 3:  # 키워드가 3개가 되면 결과 반환
+            return {'keywords': keyword_result}
 
     keywords = {
         'keywords': keyword_result
@@ -63,16 +94,26 @@ def content_keyword_process(json_data):
 
 
 def comment_keyword_process(json_data):
-    combined_comment = ' '.join(json_data['comment'])  # 리스트를 문자열로 결합
-    comment_lang = detect_language(combined_comment)
     keyword_counter = Counter()
     
     for comment in json_data['comment']:
-        comment_keywords = get_keywords(comment, lang=comment_lang, num_keywords=1)
+        comment_keywords = get_keywords(comment, num_keywords=5)
         for keyword, _ in comment_keywords:
-            if comment_lang == 'ko':
+            keyword = clean_text(keyword)
+            if not keyword:
+                continue
+
+            if detect_language(keyword) == 'ko':
                 keyword = normalize_keyword(keyword)  # 기본형으로 변환
+            elif detect_language(keyword) == 'en':
+                keyword = remove_english_stopwords(keyword)  # 영어 불필요한 단어 제거
+                if not keyword:
+                    continue
+                # 영어 키워드 첫 글자만 대문자로, 나머지 소문자로 변환
+                keyword = keyword[0].upper() + keyword[1:].lower()
+
             keyword_counter[keyword] += 1
+            break
 
     #키워드와 점수를 할당
     comment_keyword_result = [{'keyword': kw, 'found': fnd} for kw, fnd in keyword_counter.items()]
@@ -165,4 +206,3 @@ def save_keywords_to_json(keywords, filename="keywords.json"):
 
 if __name__ == '__main__':
     app.run(debug=True)
-    

@@ -134,12 +134,22 @@
       temp.innerText = _channel.subscriberCount;
 
       temp = document.getElementById('num_content');
-      temp.innerText = _channel.numContent;
+      temp.innerText = _channel.contentNum;
 
       temp = document.getElementById('url_thumbnail_channel');
       temp.style.backgroundImage = `url('${_channel.channelThumbnail}')`;
       temp.style.backgroundSize = "cover"; // 이미지가 요소를 채우도록 설정
       temp.style.backgroundPosition = "center"; // 이미지 가운데 정렬
+
+      temp = document.getElementById('ymd_found_first');
+      temp.innerText = _channel.createdAtDB;
+
+      temp = document.getElementById('txt_found_last');
+      temp.innerText = _channel.updatedAt;
+
+      temp = document.getElementById('num_anchorer');
+      temp.innerText = _channel.anchorNum;
+
     }
   </script>
 

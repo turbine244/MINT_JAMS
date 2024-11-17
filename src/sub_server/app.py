@@ -161,29 +161,20 @@ def respondK_request():
         return jsonify(keywords), 200
     elif 'comment' in json_data:
         keywords = comment_keyword_process(json_data)
-        # 결과를 Spring Boot 서버에 전송
-        sendToServer(keywords)
-        return jsonify(keywords), 200
-    else:
-        return jsonify({'error': 'Invalid JSON format'}), 400
-    
-
-@app.route('/respondS', methods=['POST'])                # main server와 연결 함수 이부분에 추가
-def respondS_request():    
-    #데이터 받음
-    json_data = request.get_json()
-    if not json_data:
-       return jsonify({"error": "Invalid JSON format."}), 400
-
-    # data에서 키워드 추출
-    if 'data' in json_data:
         sentiment_scores = analyze_comments_sentiment(json_data)
+
+        # 키워드와 감정 점수를 병합
+        combined_result = {
+            **keywords,
+            "compound_score": sentiment_scores.get("compound")
+        }
         # 결과를 Spring Boot 서버에 전송
-        sendToServer(sentiment_scores)
-        return jsonify(sentiment_scores), 200
+        sendToServer(combined_result)
+        return jsonify(combined_result), 200
     else:
         return jsonify({'error': 'Invalid JSON format'}), 400
     
+
 
 # spring boot 서버로 전송하기    
 def sendToServer(json_data):

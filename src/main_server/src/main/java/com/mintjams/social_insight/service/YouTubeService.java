@@ -662,7 +662,7 @@ public class YouTubeService {
 
     // 키워드 데이터 DB에 저장
     public void setKeywordData(String channelId, String idContent, boolean isComment,
-            JsonObject inputJson) {
+                               JsonObject inputJson) {
 
         KeywordDTO keywordDTO = new KeywordDTO();
 
@@ -753,12 +753,17 @@ public class YouTubeService {
 
             }
 
-            JsonNode sentimentNode = flaskResponse.path("compound");
-            Double double_sent = sentiment.asDouble(-1.1);
+            JsonNode sentimentNode = flaskResponse.path("compound_score");
+            Double double_sent = sentimentNode.asDouble(-1.1);
 
-            System.out.println("감정점수 뽑힘" + sentiment);
+            System.out.println("감정점수 뽑힘" + double_sent);
 
-            updateSentimentByChannelId(channelId);
+            Channel channelUpdate = channelRepository.findByChannelId(channelId)
+                    .orElseThrow(() -> new IllegalArgumentException("Channel not found with ID: " + channelId));
+            channelUpdate.setSentiment(double_sent);
+            channelRepository.save(channelUpdate);
+
+
         }
 
     }

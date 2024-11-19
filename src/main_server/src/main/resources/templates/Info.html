@@ -90,10 +90,21 @@
         </table>
       </div>
       <div class="card">
-        <canvas id="pieChart" width="200" height="200"></canvas>
-        <div id="pieLegend" class="pie_legend"></div>
-        <div th:text="${pieChart.sentiment}"></div>
-        </tr>
+        <table>
+          <tr>
+            <td>
+              <canvas id="pieChart" width="200" height="200"></canvas>
+            </td>
+            <td>
+              <div id="pieLegend" class="pie_legend"></div>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <div th:text="${pieChart.sentiment}"></div>
+            </td>
+          </tr>
+        </table>
       </div>
       <div class="card"></div>
     </div>

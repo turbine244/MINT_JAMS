@@ -753,6 +753,12 @@ public class YouTubeService {
 
             }
 
+            JsonNode sentimentNode = flaskResponse.path("compound");
+            Double double_sent = sentiment.asDouble(-1.1);
+
+            System.out.println("감정점수 뽑힘" + sentiment);
+
+            updateSentimentByChannelId(channelId);
         }
 
     }

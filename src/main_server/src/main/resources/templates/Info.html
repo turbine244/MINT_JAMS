@@ -90,8 +90,22 @@
         </table>
       </div>
       <div class="card">
-        <canvas id="pieChart" width="200" height="200"></canvas>
-        <div id="pieLegend" class="pie_legend"></div>
+        <table>
+          <tr>
+            <td>
+              <canvas id="pieChart" width="200" height="200"></canvas>
+            </td>
+            <td>
+              <div id="pieLegend" class="pie_legend"></div>
+            </td>
+
+          </tr>
+          <tr>
+            <td style="text-align: center;">
+              <div th:text="${pieChart.sentiment}"></div>
+            </td>
+          </tr>
+        </table>
       </div>
       <div class="card"></div>
     </div>
@@ -162,7 +176,7 @@
       //워드클라우드 환경설정
 
       var wordset = [];
-      for (var i = 0; i < data.length; i++) {
+      for (var i = 0; i < min(20, data.length); i++) {
         wordset.push({ text: labels[i], count: data[i] });
       }
 
@@ -173,7 +187,7 @@
           words: wordset,
           minLength: 5,
           ignore: [""],
-          maxItems: 100,
+          maxItems: 20,
           aspect: 'spiral', // 'flow-top' | 'flow-center'
 
           colorType: 'palette',

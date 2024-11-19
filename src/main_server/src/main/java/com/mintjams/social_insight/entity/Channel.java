@@ -36,6 +36,9 @@ public class Channel {
     @Column
     private Integer anchorNum = 0;
 
+    @Column
+    private Double sentiment = 0.0;
+
 
     // 엔티티가 처음 저장될 때 호출되는 메서드
     @PrePersist

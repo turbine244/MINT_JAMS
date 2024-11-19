@@ -14,10 +14,12 @@ public class KeywordDTO {
 
     private List<String> keyList;
     private List<Integer> foundList;
+    private Double sentiment;
 
-    public KeywordDTO(List<String> keyList, List<Integer> foundList) {
+    public KeywordDTO(List<String> keyList, List<Integer> foundList, Double sentiment) {
         this.keyList = keyList;
         this.foundList = foundList;
+        this.sentiment = sentiment;
     }
 
 }

@@ -12,13 +12,7 @@ import java.util.Optional;
 
 @Repository
 public interface ChannelRepository extends JpaRepository<Channel, String> {
-
     Optional<Channel> findByChannelId(String channelId);
 
-    // sentiment 값만 업데이트
-    @Transactional
-    @Modifying(clearAutomatically = true)
-    @Query("UPDATE channel c SET c.sentiment = :sentiment WHERE c.channelId = :channelId")
-    int updateSentimentByChannelId(@Param("channelId") String channelId, @Param("sentiment") Double sentiment);
-
+    Double findSentimentByChannelId(@Param("channelId") String channelId);
 }

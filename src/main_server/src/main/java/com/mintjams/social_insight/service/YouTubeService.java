@@ -846,7 +846,7 @@ public class YouTubeService {
             // System.out.println("댓글 키워드: " + keyword.getFound());
         }
 
-        return new KeywordDTO(keyList, foundList);
+        return new KeywordDTO(keyList, foundList, 0.0);
     }
 
     // 파이 차트 - 댓글 키워드 (동영상 당 8개)
@@ -864,7 +864,10 @@ public class YouTubeService {
             // System.out.println("댓글 점수: " + keyword[1]);
         }
 
-        return new KeywordDTO(keyList, foundList);
+        // DB에서 감정 가져오기
+        Double double_sent = channelRepository.findSentimentByChannelId(channelId);
+
+        return new KeywordDTO(keyList, foundList, double_sent);
     }
 
     public Object getGrowthData(String channelId) {

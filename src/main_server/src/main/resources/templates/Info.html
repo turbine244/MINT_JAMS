@@ -90,22 +90,10 @@
         </table>
       </div>
       <div class="card">
-        <table>
-          <tr>
-            <td>
-              <canvas id="pieChart" width="200" height="200"></canvas>
-            </td>
-            <td>
-              <div id="pieLegend" class="pie_legend"></div>
-            </td>
-
-          </tr>
-          <tr>
-            <td style="text-align: center;">
-              <div th:text="${pieChart.sentiment}"></div>
-            </td>
-          </tr>
-        </table>
+        <canvas id="pieChart" width="200" height="200"></canvas>
+        <div id="pieLegend" class="pie_legend"></div>
+        <div th:text="${pieChart.sentiment}"></div>
+        </tr>
       </div>
       <div class="card"></div>
     </div>
@@ -176,7 +164,7 @@
       //워드클라우드 환경설정
 
       var wordset = [];
-      for (var i = 0; i < min(20, data.length); i++) {
+      for (var i = 0; i < data.length; i++) {
         wordset.push({ text: labels[i], count: data[i] });
       }
 
@@ -187,7 +175,7 @@
           words: wordset,
           minLength: 5,
           ignore: [""],
-          maxItems: 20,
+          maxItems: 100,
           aspect: 'spiral', // 'flow-top' | 'flow-center'
 
           colorType: 'palette',
@@ -273,7 +261,7 @@
         "#9966FF",
         "#FF9F40",
         "#3DC17C",
-        "#607D8B"
+        "#FF6699"
       ];
       const total = data.reduce((sum, value) => sum + value,
         0);

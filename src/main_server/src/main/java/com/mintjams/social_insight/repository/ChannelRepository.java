@@ -14,5 +14,6 @@ import java.util.Optional;
 public interface ChannelRepository extends JpaRepository<Channel, String> {
     Optional<Channel> findByChannelId(String channelId);
 
+    @Query(value = "SELECT c.sentiment FROM Channel c WHERE c.channel_Id = :channelId", nativeQuery = true)
     Double findSentimentByChannelId(@Param("channelId") String channelId);
 }

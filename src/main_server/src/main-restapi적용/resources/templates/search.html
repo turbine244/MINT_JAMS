@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anchor</title>
+    <link rel="stylesheet" href="/css/anchor.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Gasoek+One&family=Jua&family=Nanum+Brush+Script&family=Nanum+Gothic&family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.zingchart.com/zingchart.min.js"></script>
+</head>
+<body>
+<!-- HEADER -->
+<div class="header">
+    <div class="icon24 ico_menu" onclick="toggleMenu()"></div>
+    <div class="search">
+        <div class="icon24 ico_glass"></div>
+        <form action="#" onsubmit="return false;" onkeydown="if(event.key === 'Enter'){ searchChannel(); }">
+            <input name="channelTitle" id="txt_name_target" type="text" placeholder="Search..." />
+        </form>
+    </div>
+    <div class="credit">
+        <div class="icon24 ico_credit"></div>
+        <div class="txt_credit">999+</div>
+    </div>
+</div>
+
+<!-- CARDBOX -->
+<div class="cardbox">
+    <!-- CHANNEL CARD -->
+    <div class="channel card">
+        <div class="channel-image" id="url_thumbnail_channel"></div>
+        <div class="channel-info">
+            <div class="channel-name" id="txt_name_channel"></div>
+            <div class="channel-link" id="txt_link_channel"></div>
+            <table class="tbl_info-native">
+                <tr>
+                    <th>채널 개설일</th>
+                    <td id="ymd_creation_channel"></td>
+                </tr>
+                <tr>
+                    <th>구독자 수</th>
+                    <td id="txt_subscriber"></td>
+                </tr>
+                <tr>
+                    <th>콘텐츠 수</th>
+                    <td id="num_content"></td>
+                </tr>
+            </table>
+            <table class="tbl_info-anchor">
+                <tr>
+                    <th>최초 발견 일자</th>
+                    <td id="ymd_found_first"></td>
+                </tr>
+                <tr>
+                    <th>마지막 발견</th>
+                    <td id="txt_found_last"></td>
+                </tr>
+                <tr>
+                    <th>ANCHOR</th>
+                    <td id="num_anchorer"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- CARD DECK -->
+    <div class="deck">
+        <div class="card">
+            <div id="wordCloud"></div>
+        </div>
+        <div class="card">
+            <table id="rankChart">
+                <thead>
+                <th colspan="3">랭킹</th>
+                </thead>
+                <tbody>
+                <!-- 동적 삽입 -->
+                </tbody>
+            </table>
+        </div>
+        <div class="card">
+            <table>
+                <tr>
+                    <td>
+                        <canvas id="pieChart" width="200" height="200"></canvas>
+                    </td>
+                    <td>
+                        <div id="pieLegend" class="pie_legend"></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <div style="text-align: center;" id="sentimentDisplay">Sentiment: <span id="sentimentValue"></span></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="text-align: center;">
+                        <button id="prevButton">&lt; Previous</button>
+                        <button id="nextButton">Next &gt;</button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="card"></div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer"></div>
+
+<!-- REST API 호출 및 데이터 렌더링 -->
+<script>
+
+    function searchChannel() {
+        const channelTitle = document.getElementById("txt_name_target").value;
+        if (!channelTitle) {
+            alert("채널 제목을 입력하세요.");
+            return;
+        }
+
+        // 검색 후 페이지 새로 고침 없이 데이터 로드
+        window.location.href = `/search?channelTitle=${encodeURIComponent(channelTitle)}`;
+    }
+
+    async function fetchChannelData(channelTitle) {
+        try {
+            const channelData = await fetchData("channel", { channelTitle });
+
+            // 채널 데이터 받으면 화면을 갱신하는 함수 호출
+            drawChannelCard(channelData);
+
+            const channelId = channelData.channelId;
+
+            // 추가 데이터 로드
+            await loadWordCloud(channelId);
+            await loadRankChart(channelId);
+            await loadPieChartData(channelId);
+        } catch (error) {
+            console.error("Error while fetching data: ", error);
+            alert("데이터를 로드하는 중 오류가 발생했습니다.");
+        }
+    }
+
+    // URL에서 channelTitle을 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    const channelTitle = urlParams.get('channelTitle');
+
+    if (channelTitle) {
+        console.log("Received channelTitle:", channelTitle);
+        // 데이터를 로드하는 함수 호출 가능
+        searchChannelInfo(channelTitle);
+    } else {
+        alert("채널 제목이 없습니다.");
+    }
+
+    async function fetchData(endpoint, params) {
+        const queryString = new URLSearchParams(params).toString();
+        const response = await fetch(`/api/${endpoint}?${queryString}`);
+
+        // 응답 상태 코드 확인
+        if (!response.ok) {
+            // 응답이 200 OK가 아니면 에러를 발생시킴
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return response.json(); // 정상적으로 JSON 반환
+    }
+
+    async function searchChannelInfo(channelTitle) {
+        if (!channelTitle) return;
+
+        try {
+            console.log("Fetching data for channelTitle:", channelTitle);
+
+            // REST API 호출
+            const channelData = await fetchData("channel", { channelTitle });
+
+            console.log("Channel data received:", channelData);
+
+            drawChannelCard(channelData);
+
+            const channelId = channelData.channelId;
+
+            // 추가 데이터 로드
+            await loadWordCloud(channelId);
+            await loadRankChart(channelId);
+            await loadPieChartData(channelId);
+        } catch (error) {
+            console.error("Error while fetching data: ", error);
+            alert("데이터를 로드하는 중 오류가 발생했습니다. 콘솔에서 에러를 확인하세요.");
+        }
+    }
+
+    function drawChannelCard(data) {
+        document.getElementById('txt_name_channel').innerText = data.channelTitle;
+        document.getElementById('txt_link_channel').innerText = data.channelUrl;
+        document.getElementById('ymd_creation_channel').innerText = data.createdAt;
+        document.getElementById('txt_subscriber').innerText = data.subscriberCount;
+        document.getElementById('num_content').innerText = data.contentNum;
+
+        const temp = document.getElementById('url_thumbnail_channel');
+        temp.style.backgroundImage = `url('${data.channelThumbnail}')`;  // 썸네일 이미지 설정
+        temp.style.backgroundSize = "cover";  // 이미지가 요소를 채우도록 설정
+        temp.style.backgroundPosition = "center";  // 이미지 가운데 정렬
+
+        document.getElementById('ymd_found_first').innerText = data.createdAtDB;  // 최초 발견 일자
+        document.getElementById('txt_found_last').innerText = data.updatedAt;    // 마지막 발견
+        document.getElementById('num_anchorer').innerText = data.anchorNum;       // ANCHOR
+
+    }
+
+
+    function drawWordCloud(data, labels) {
+        // 워드클라우드 모듈 불러오기
+        zingchart.MODULESDIR = 'https://cdn.zingchart.com/modules/';
+
+        // 워드 클라우드를 그릴 데이터 형식 준비
+        var wordset = [];
+        for (var i = 0; i < data.length; i++) {
+            wordset.push({ text: labels[i], count: data[i] });
+        }
+
+        // 워드클라우드 환경설정
+        var myConfig = {
+            type: 'wordcloud',
+            options: {
+                words: wordset,
+                minLength: 5, // 최소 길이
+                ignore: [""], // 빈 문자열을 무시
+                maxItems: 100, // 최대 항목 수
+                aspect: 'spiral', // 단어 배치 방식
+                colorType: 'palette',
+                palette: ['#D32F2F', '#5D4037', '#1976D2', '#E53935', '#6D4C41', '#1E88E5', '#F44336', '#795548', '#2196F3', '#EF5350', '#8D6E63', '#42A5F5'],
+                style: {
+                    fontFamily: 'Crete Round',
+                    hoverState: {
+                        backgroundColor: '#D32F2F',
+                        borderRadius: 2,
+                        fontColor: 'white'
+                    },
+                    tooltip: {
+                        text: '%text: %hits', // 툴팁 내용
+                        visible: true,
+                        alpha: 0.9,
+                        backgroundColor: '#1976D2',
+                        borderRadius: 2,
+                        fontColor: 'white',
+                        fontFamily: 'Georgia',
+                        textAlpha: 1
+                    }
+                }
+            },
+            source: {
+                fontColor: '#64B5F6',
+                fontSize: 10,
+                fontFamily: 'Georgia',
+                fontWeight: 'normal',
+                marginBottom: '10%'
+            }
+        };
+
+        // 워드클라우드 렌더링
+        zingchart.render({
+            id: 'wordCloud', // `wordCloud`는 HTML의 id로 설정
+            data: myConfig,
+            height: '100%',
+            width: '100%'
+        });
+    }
+
+    async function loadWordCloud(channelId) {
+        const data = await fetchData("wordcloud", { channelId });
+        drawWordCloud(data.foundList, data.keyList);
+    }
+
+
+    function drawRankChart(data, labels) {
+        // 테이블 요소 선택
+        const tableBody = document.getElementById('rankChart').querySelector('tbody');
+
+        // 기존 테이블 내용 초기화
+        tableBody.innerHTML = '';
+
+        // 데이터로 테이블 행 생성
+        let index = 0;
+        labels.forEach(() => {
+            const row = document.createElement('tr');
+
+            // 각 행에 번호, 단어, 빈도수 추가
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${labels[index]}</td>
+                <td>${'+' + data[index]}</td>
+            `;
+
+            tableBody.appendChild(row);
+            index++;
+        });
+    }
+
+
+
+    async function loadRankChart(channelId) {
+        const data = await fetchData("ranking", { channelId });
+        drawRankChart(data.foundList, data.keyList);
+    }
+
+    //파이 차트
+    let currentPage = 0; // 현재 페이지를 추적
+    let pieData = []; // 서버에서 받은 PieDTO 리스트
+
+    function updatePieChartPage() {
+        if (pieData.length === 0) return; // 데이터가 없으면 처리하지 않음
+
+        const data = pieData[currentPage];
+        drawPieChart(data.foundList, data.keyList);
+
+        // Sentiment 값 업데이트
+        document.getElementById("sentimentValue").innerText = data.sentiment.toFixed(2);
+    }
+
+    function setupNavigationButtons() {
+        const prevButton = document.getElementById("prevButton");
+        const nextButton = document.getElementById("nextButton");
+
+        prevButton.addEventListener("click", () => {
+            if (currentPage > 0) {
+                currentPage--;
+                updatePieChartPage();
+            }
+        });
+
+        nextButton.addEventListener("click", () => {
+            if (currentPage < pieData.length - 1) {
+                currentPage++;
+                updatePieChartPage();
+            }
+        });
+    }
+
+    function drawPieChart(data, labels) {
+        const canvas = document.getElementById("pieChart");
+        const ctx = canvas.getContext("2d");
+
+        const colors = [
+            "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0",
+            "#9966FF", "#FF9F40", "#3DC17C", "#FF6699"
+        ];
+        const total = data.reduce((sum, value) => sum + value, 0);
+
+        let startAngle = 0;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // 기존 캔버스 초기화
+
+        // 파이 차트 그리기
+        data.forEach((value, index) => {
+            const sliceAngle = (value / total) * 2 * Math.PI;
+
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, canvas.height / 2);
+            ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, startAngle, startAngle + sliceAngle);
+            ctx.closePath();
+            ctx.fillStyle = colors[index % colors.length];
+            ctx.fill();
+
+            startAngle += sliceAngle;
+        });
+
+        // 범례 추가
+        const legendContainer = document.getElementById("pieLegend");
+        legendContainer.innerHTML = ""; // 기존 범례 초기화
+
+        labels.forEach((label, index) => {
+            const legendItem = document.createElement("div");
+            legendItem.classList.add("pie_legend-item");
+
+            const colorBox = document.createElement("span");
+            colorBox.classList.add("pie_legend-color");
+            colorBox.style.backgroundColor = colors[index % colors.length];
+
+            const legendText = document.createElement("span");
+            legendText.innerText = label;
+
+            legendItem.appendChild(colorBox);
+            legendItem.appendChild(legendText);
+            legendContainer.appendChild(legendItem);
+        });
+    }
+
+    async function loadPieChartData(channelId) {
+        try {
+            const response = await fetch(`/api/piechart?channelId=${channelId}`);
+            pieData = await response.json();
+
+            // 첫 번째 페이지를 로드
+            currentPage = 0;
+            updatePieChartPage();
+        } catch (error) {
+            console.error("Failed to load pie chart data:", error);
+        }
+    }
+
+    // 페이지 로드 시 초기화
+    document.addEventListener("DOMContentLoaded", () => {
+        setupNavigationButtons();
+    });
+</script>
+</body>
+</html>

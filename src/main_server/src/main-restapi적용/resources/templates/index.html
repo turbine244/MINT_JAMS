@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anchor</title>
+    <link rel="stylesheet" href="/css/anchor.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Gasoek+One&family=Jua&family=Nanum+Brush+Script&family=Nanum+Gothic&family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+<!-- HEADER -->
+<div class="header">
+    <div class="icon24 ico_menu" onclick="toggleMenu()"></div>
+    <div class="search">
+        <div class="icon24 ico_glass"></div>
+        <form action="#" onsubmit="return false;" onkeydown="if(event.key === 'Enter'){ searchChannel(); }">
+            <input name="channelTitle" id="txt_name_target" type="text" placeholder="Search..." />
+        </form>
+    </div>
+    <div class="credit">
+        <div class="icon24 ico_credit"></div>
+        <div class="txt_credit">999+</div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer"></div>
+
+<!-- SCRIPT -->
+<script>
+    function searchChannel() {
+        const channelTitle = document.getElementById("txt_name_target").value;
+        if (!channelTitle) {
+            alert("채널 제목을 입력하세요.");
+            return;
+        }
+
+        // 검색 후 '/search' 페이지로 이동하면서 'channelTitle'을 URL 파라미터로 전달
+        window.location.href = `/search?channelTitle=${encodeURIComponent(channelTitle)}`;
+    }
+</script>
+
+</body>
+</html>

@@ -8,6 +8,7 @@ import requests  # 서버와 통신하기 위해 사용
 from flask_cors import CORS
 import json
 import re
+import math
 
 
 app = Flask(__name__)
@@ -144,6 +145,16 @@ def analyze_comments_sentiment(json_data):
         sentiment_scores = analyzer.polarity_scores(combined_comments)
     
     return sentiment_scores
+
+
+def get_score(y, alpha=15):
+    if y**2 >= 1:
+        return None
+    try:
+        x = math.sqrt(alpha * y**2 / (1 - y**2))
+        return x
+    except ValueError:
+        return None
 
 
 @app.route('/respondK', methods=['POST'])                # main server와 연결 함수 이부분에 추가

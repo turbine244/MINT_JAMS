@@ -113,6 +113,8 @@
 <!-- REST API 호출 및 데이터 렌더링 -->
 <script>
 
+    let channelId = null;  // 채널 ID를 전역 변수로 선언
+
     function searchChannel() {
         const channelTitle = document.getElementById("txt_name_target").value;
         if (!channelTitle) {
@@ -124,22 +126,14 @@
         window.location.href = `/search?channelTitle=${encodeURIComponent(channelTitle)}`;
     }
 
-    async function fetchChannelData(channelTitle) {
-        try {
-            const channelData = await fetchData("channel", { channelTitle });
 
-            // 채널 데이터 받으면 화면을 갱신하는 함수 호출
-            drawChannelCard(channelData);
 
-            const channelId = channelData.channelId;
-
-            // 추가 데이터 로드
-            await loadWordCloud(channelId);
-            await loadRankChart(channelId);
-            await loadPieChartData(channelId);
-        } catch (error) {
-            console.error("Error while fetching data: ", error);
-            alert("데이터를 로드하는 중 오류가 발생했습니다.");
+    // 주기적으로 차트만 갱신하는 함수
+    function updateCharts() {
+        if (channelId) {
+            loadWordCloud(channelId);
+            loadRankChart(channelId);
+            loadPieChartData(channelId);
         }
     }
 
@@ -151,6 +145,12 @@
         console.log("Received channelTitle:", channelTitle);
         // 데이터를 로드하는 함수 호출 가능
         searchChannelInfo(channelTitle);
+
+        // 일정 간격(예: 5초)으로 차트 갱신
+        setInterval(() => {
+            updateCharts(channelId);
+        }, 5000); // 5000ms = 5초마다 차트 갱신
+
     } else {
         alert("채널 제목이 없습니다.");
     }
@@ -181,12 +181,10 @@
 
             drawChannelCard(channelData);
 
-            const channelId = channelData.channelId;
+            channelId = channelData.channelId;
 
             // 추가 데이터 로드
-            await loadWordCloud(channelId);
-            await loadRankChart(channelId);
-            await loadPieChartData(channelId);
+            updateCharts();
         } catch (error) {
             console.error("Error while fetching data: ", error);
             alert("데이터를 로드하는 중 오류가 발생했습니다. 콘솔에서 에러를 확인하세요.");

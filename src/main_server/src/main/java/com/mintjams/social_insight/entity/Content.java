@@ -25,6 +25,9 @@ public class Content {
     @Column
     private Integer commentNum;
 
+    @Column
+    private Double sentiment = 0.0;
+
 }
 
 

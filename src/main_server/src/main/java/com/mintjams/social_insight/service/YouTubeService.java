@@ -25,9 +25,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -758,10 +756,10 @@ public class YouTubeService {
 
             System.out.println("감정점수 뽑힘" + double_sent);
 
-            Channel channelUpdate = channelRepository.findByChannelId(channelId)
-                    .orElseThrow(() -> new IllegalArgumentException("Channel not found with ID: " + channelId));
-            channelUpdate.setSentiment(double_sent);
-            channelRepository.save(channelUpdate);
+            Content contentUpdate = contentRepository.findByChannelAndContentId(channel, idContent)
+                            .orElseThrow(() -> new IllegalArgumentException("Channel not found with ID: " + channelId + " " + idContent));
+            contentUpdate.setSentiment(double_sent);
+            contentRepository.save(contentUpdate);
 
 
         }
@@ -846,28 +844,37 @@ public class YouTubeService {
             // System.out.println("댓글 키워드: " + keyword.getFound());
         }
 
-        return new KeywordDTO(keyList, foundList, 0.0);
+        return new KeywordDTO(keyList, foundList);
     }
 
     // 파이 차트 - 댓글 키워드 (동영상 당 8개)
-    public KeywordDTO getPieData(String channelId) {
-        List<Object[]> topKeywords = commentKeywordRepository
-                .findTop8ByChannelIdAndCommentIdOrderByFoundDesc(channelId);
+    public List<PieDTO> getPieData(String channelId) {
+        List<Object[]> topKeywords = commentKeywordRepository.findTop8ByChannelId(channelId);
 
-        List<String> keyList = new ArrayList<>();
-        List<Integer> foundList = new ArrayList<>();
+        // 그룹화된 데이터를 저장할 맵 (content_id -> 키워드, found 리스트)
+        Map<String, List<String>> keyMap = new HashMap<>();
+        Map<String, List<Integer>> foundMap = new HashMap<>();
 
-        for (Object[] keyword : topKeywords) {
-            keyList.add((String) keyword[0]);
-            // System.out.println("댓글 키워드: " + keyword[0]);
-            foundList.add((Integer) keyword[1]);
-            // System.out.println("댓글 점수: " + keyword[1]);
+        for (Object[] data : topKeywords) {
+            String contentId = (String) data[0];
+            String commentKey = (String) data[1];
+            int found = (int) data[2];
+
+            // 그룹화 작업
+            keyMap.computeIfAbsent(contentId, k -> new ArrayList<>()).add(commentKey);
+            foundMap.computeIfAbsent(contentId, k -> new ArrayList<>()).add(found);
         }
 
-        // DB에서 감정 가져오기
-        Double double_sent = channelRepository.findSentimentByChannelId(channelId);
+        // DTO 변환
+        List<PieDTO> result = new ArrayList<>();
+        for (String contentId : keyMap.keySet()) {
+            // DB에서 감정 가져오기
+            Double double_sent = contentRepository.findSentimentByContentId(contentId, channelId);
+            result.add(new PieDTO(contentId, keyMap.get(contentId), foundMap.get(contentId),double_sent));
+        }
 
-        return new KeywordDTO(keyList, foundList, double_sent);
+
+        return result;
     }
 
     public Object getGrowthData(String channelId) {

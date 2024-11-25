@@ -16,12 +16,12 @@ public class CommentKeyword {
 
     //채널id(외래키)
     @ManyToOne
-    @JoinColumn(name = "channel_id")
+    @JoinColumn(name = "channel_id") //String
     private Channel channel;
 
     //컨텐트id
     @ManyToOne
-    @JoinColumn(name = "content_id")
+    @JoinColumn(name = "content_id") //String
     private Content content;
 
     @Column

@@ -756,10 +756,10 @@ public class YouTubeService {
 
             System.out.println("감정점수 뽑힘" + double_sent);
 
-            Double old = contentUpdate.getSentiment();
-
             Content contentUpdate = contentRepository.findByChannelAndContentId(channel, idContent)
                             .orElseThrow(() -> new IllegalArgumentException("Channel not found with ID: " + channelId + " " + idContent));
+
+            Double old = contentUpdate.getSentiment();
             contentUpdate.setSentiment(old + double_sent);
             contentRepository.save(contentUpdate);
 

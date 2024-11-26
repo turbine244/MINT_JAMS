@@ -26,6 +26,11 @@
     </div>
 </div>
 
+<div id="loadingIndicator" style="display: none; text-align: center; font-size: 18px; margin: 20px;">
+    데이터를 가지고 오는 중입니다...
+</div>
+
+
 <!-- CARDBOX -->
 <div class="cardbox">
     <!-- CHANNEL CARD -->
@@ -113,6 +118,14 @@
 <!-- REST API 호출 및 데이터 렌더링 -->
 <script>
 
+    function showLoading() {
+        document.getElementById("loadingIndicator").style.display = "block";
+    }
+
+    function hideLoading() {
+        document.getElementById("loadingIndicator").style.display = "none";
+    }
+
     let channelId = null;  // 채널 ID를 전역 변수로 선언
 
     function searchChannel() {
@@ -156,38 +169,40 @@
     }
 
     async function fetchData(endpoint, params) {
+        showLoading(); // 로딩 메시지 표시
         const queryString = new URLSearchParams(params).toString();
-        const response = await fetch(`/api/${endpoint}?${queryString}`);
+        try {
+            const response = await fetch(`/api/${endpoint}?${queryString}`);
 
-        // 응답 상태 코드 확인
-        if (!response.ok) {
-            // 응답이 200 OK가 아니면 에러를 발생시킴
-            throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return response.json();
+        } catch (error) {
+            console.error("Error while fetching data:", error);
+            throw error;
+        } finally {
+            hideLoading(); // 로딩 메시지 숨김
         }
-
-        return response.json(); // 정상적으로 JSON 반환
     }
 
     async function searchChannelInfo(channelTitle) {
         if (!channelTitle) return;
 
+        showLoading();
         try {
-            console.log("Fetching data for channelTitle:", channelTitle);
-
             // REST API 호출
             const channelData = await fetchData("channel", { channelTitle });
-
-            console.log("Channel data received:", channelData);
-
             drawChannelCard(channelData);
-
             channelId = channelData.channelId;
-
             // 추가 데이터 로드
             updateCharts();
         } catch (error) {
             console.error("Error while fetching data: ", error);
             alert("데이터를 로드하는 중 오류가 발생했습니다. 콘솔에서 에러를 확인하세요.");
+        } finally {
+            hideLoading(); // 로딩 메시지 숨김
         }
     }
 

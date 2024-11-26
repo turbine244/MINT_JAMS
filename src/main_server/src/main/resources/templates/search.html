@@ -325,6 +325,19 @@
         drawPieChart(data.foundList, data.keyList);
 
         // Sentiment 값 업데이트
+        let norm_score = data.sentiment.toFixed(2);
+        
+        norm_score /= math.sqrt((score * score) + 15);
+        
+        if (norm_score < -1.0)
+        {
+            norm_score = -1.0;
+        }    
+        else if (norm_score > 1.0)
+        {
+            norm_score = 1.0;
+        }            
+
         document.getElementById("sentimentValue").innerText = data.sentiment.toFixed(2);
     }
 

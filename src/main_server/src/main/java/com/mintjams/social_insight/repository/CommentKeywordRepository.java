@@ -18,12 +18,6 @@ public interface CommentKeywordRepository extends JpaRepository<CommentKeyword, 
     //누적
     Optional<CommentKeyword> findByCommentKeyAndChannelAndContent(String contentKey, Channel channel, Content content);
 
-    //파이차트(임시)
-    @Query(value = "SELECT ck.comment_Key, ck.found FROM Comment_Keyword ck " +
-            "WHERE ck.channel_Id = :channelId ORDER BY ck.found " +
-            "DESC LIMIT 8", nativeQuery = true)
-    List<Object[]> findTop8ByChannelIdAndCommentIdOrderByFoundDesc(@Param("channelId") String channelId);
-
     //파이차트 (임시2)
     @Query(value = "SELECT c.content_id AS contentId, c.comment_key AS commentKey, c.found AS found " +
             "FROM comment_keyword c " +
@@ -32,5 +26,10 @@ public interface CommentKeywordRepository extends JpaRepository<CommentKeyword, 
             "LIMIT 8", nativeQuery = true)
     List<Object[]> findTop8ByChannelId(@Param("channelId") String channelId);
 
+
+    @Query(value = "SELECT ck.comment_Key, ck.found FROM Comment_Keyword ck" +
+            " WHERE ck.content_Id = :contentId ORDER BY ck.found " +
+            "DESC LIMIT 8", nativeQuery = true)
+    List<Object[]> findTopKeywordsByContentId(@Param("contentId") String contentId);
 
 }

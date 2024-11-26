@@ -757,7 +757,7 @@ public class YouTubeService {
             System.out.println("감정점수 뽑힘" + double_sent);
 
             Content contentUpdate = contentRepository.findByChannelAndContentId(channel, idContent)
-                            .orElseThrow(() -> new IllegalArgumentException("Channel not found with ID: " + channelId + " " + idContent));
+                    .orElseThrow(() -> new IllegalArgumentException("Channel not found with ID: " + channelId + " " + idContent));
 
             Double old = contentUpdate.getSentiment();
             contentUpdate.setSentiment(old + double_sent);
@@ -813,7 +813,7 @@ public class YouTubeService {
     // 워드클라우드 그래프 - 모든 키워드 상위 100개
     public WordCloudDTO getWordCloudData(String channelId) {
 
-        List<Object[]> results = contentKeywordRepository.findTop100ByChannelIdOrderByFoundDesc(channelId);
+        List<Object[]> results = contentKeywordRepository.findTop50ByChannelIdOrderByFoundDesc(channelId);
 
         // 키워드 리스트와 found 리스트 생성
         List<String> keyList = results.stream()
@@ -851,32 +851,42 @@ public class YouTubeService {
 
     // 파이 차트 - 댓글 키워드 (동영상 당 8개)
     public List<PieDTO> getPieData(String channelId) {
-        List<Object[]> topKeywords = commentKeywordRepository.findTop8ByChannelId(channelId);
+        // Step 1: Get the latest 5 contentIds for the given channelId
+        List<String> contentIds = contentRepository.findLatestContentIdsByChannelId(channelId);
 
-        // 그룹화된 데이터를 저장할 맵 (content_id -> 키워드, found 리스트)
+        // Maps to store keywords and their found counts
         Map<String, List<String>> keyMap = new HashMap<>();
         Map<String, List<Integer>> foundMap = new HashMap<>();
+        // Step 2: For each contentId, get the top 8 keywords and their found counts
+        for (String contentId : contentIds) {
+            List<Object[]> keywordsData = commentKeywordRepository.findTopKeywordsByContentId(contentId);
 
-        for (Object[] data : topKeywords) {
-            String contentId = (String) data[0];
-            String commentKey = (String) data[1];
-            int found = (int) data[2];
+            List<String> keys = new ArrayList<>();
+            List<Integer> founds = new ArrayList<>();
 
-            // 그룹화 작업
-            keyMap.computeIfAbsent(contentId, k -> new ArrayList<>()).add(commentKey);
-            foundMap.computeIfAbsent(contentId, k -> new ArrayList<>()).add(found);
+            for (Object[] row : keywordsData) {
+                keys.add((String) row[0]);
+                founds.add((Integer) row[1]);
+            }
+
+            keyMap.put(contentId, keys);
+            foundMap.put(contentId, founds);
         }
 
-        // DTO 변환
+        // Step 3: Create PieDTO objects and add them to the result list
         List<PieDTO> result = new ArrayList<>();
-        for (String contentId : keyMap.keySet()) {
-            // DB에서 감정 가져오기
-            Double double_sent = contentRepository.findSentimentByContentId(contentId, channelId);
-            result.add(new PieDTO(contentId, keyMap.get(contentId), foundMap.get(contentId),double_sent));
+        for (String contentId : contentIds) {
+            Double sentiment = contentRepository.findSentimentByContentId(contentId, channelId);
+            PieDTO pieDTO = new PieDTO();
+            pieDTO.setContentId(contentId);
+            pieDTO.setKeyList(keyMap.get(contentId));
+            pieDTO.setFoundList(foundMap.get(contentId));
+            pieDTO.setSentiment(sentiment);
+            result.add(pieDTO);
         }
-
 
         return result;
+
     }
 
     public Object getGrowthData(String channelId) {

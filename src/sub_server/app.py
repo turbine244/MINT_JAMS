@@ -166,11 +166,13 @@ def respondK_request():
 
     # data에서 키워드 추출
     if 'content' in json_data:
+        print("Content Data in Process..")
         keywords = content_keyword_process(json_data)
         # 결과를 Spring Boot 서버에 전송
         sendToServer(keywords)
         return jsonify(keywords), 200
     elif 'comment' in json_data:
+        print("Comment Data in Process..")
         keywords = comment_keyword_process(json_data)
         sentiment_scores = analyze_comments_sentiment(json_data)
 

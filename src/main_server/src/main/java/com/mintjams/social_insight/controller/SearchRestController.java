@@ -4,6 +4,7 @@ import com.mintjams.social_insight.dto.ChannelDTO;
 import com.mintjams.social_insight.dto.KeywordDTO;
 import com.mintjams.social_insight.dto.PieDTO;
 import com.mintjams.social_insight.dto.WordCloudDTO;
+import com.mintjams.social_insight.service.ApiService;
 import com.mintjams.social_insight.service.YouTubeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -15,15 +16,18 @@ import java.util.List;
 public class SearchRestController {
 
     private final YouTubeService youTubeService;
+    private final ApiService apiService;
 
-    public SearchRestController(YouTubeService youTubeService) {
+    public SearchRestController(YouTubeService youTubeService, ApiService apiService) {
         this.youTubeService = youTubeService;
+        this.apiService = apiService;
     }
 
     // 1. 채널 정보
     @GetMapping("/channel")
     public ChannelDTO getChannelData(@RequestParam("channelTitle") String channelTitle) {
-        String apiKey = "AIzaSyAlR7JJ-b8yB_oaid6UVJZ_moFgRNW7bXQ";
+        //String apiKey = "AIzaSyAlR7JJ-b8yB_oaid6UVJZ_moFgRNW7bXQ";
+        String apiKey = apiService.getCurrentApiKey();
 
         ChannelDTO channelDTO = youTubeService.getChannelData(channelTitle, apiKey);
 

@@ -20,3 +20,6 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: update
+
+api:
+  keys: "AIzaSyDFE7aU1PtVcZAuTotmuKu9H0oXNA_OSxY, AIzaSyAP8MvJKjA_zDzDlOpo28tqlcjjlsvaSoQ, AIzaSyAGipR-_mxfFhDvxP2mnoRPmzO5P8L72fM"

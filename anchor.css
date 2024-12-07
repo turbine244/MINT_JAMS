@@ -265,9 +265,10 @@ table th {
 #chart-area {
     width: 100%;
     position: relative;
-
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 1rem;
-
     border-top: solid 0.1rem var(--color_point2);
     border-bottom: solid 0.1rem var(--color_point2);
 }

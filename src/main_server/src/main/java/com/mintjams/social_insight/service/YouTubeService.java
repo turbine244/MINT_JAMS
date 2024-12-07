@@ -18,6 +18,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -52,6 +54,7 @@ public class YouTubeService {
         // 채널 DB 신규 갱신
         Channel channel = new Channel();
         channel.setChannelId(channelDTO.getChannelId());
+        channel.setChannelTitle(channelDTO.getChannelTitle());
         channel.setContentNum(channelDTO.getContentNum());
         channelRepository.save(channel);
 
@@ -300,7 +303,7 @@ public class YouTubeService {
     // 기존에 데이터가 있는 경우 분석 소요 파악
     public void checkUpdate(String channelId, String apiKey) {
 
-        // 앵커 증가
+        // 조회수 증가
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new RuntimeException("Channel not found with id: " + channelId));
         Integer anchorNum = channel.getAnchorNum();
@@ -973,6 +976,24 @@ public class YouTubeService {
         // 'YYYY-MM-DD' 포맷으로 변환
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         return createdAt.format(formatter);
+    }
+
+    //인기
+    public List<SearchTrendsDTO> getPopularKeywords() {
+        Pageable pageable = PageRequest.of(0, 10); // 상위 10개
+        List<Channel> popularChannels = channelRepository.findByOrderByAnchorNumDesc(pageable);
+        return popularChannels.stream()
+                .map(c -> new SearchTrendsDTO(c.getChannelTitle(), c.getAnchorNum(), null))
+                .collect(Collectors.toList());
+    }
+
+    //최근
+    public List<SearchTrendsDTO> getRecentKeywords() {
+        Pageable pageable = PageRequest.of(0, 10); // 상위 10개
+        List<Channel> recentChannels = channelRepository.findByOrderByUpdatedAtDesc(pageable);
+        return recentChannels.stream()
+                .map(c -> new SearchTrendsDTO(c.getChannelTitle(), 0, c.getUpdatedAt()))
+                .collect(Collectors.toList());
     }
 
 }

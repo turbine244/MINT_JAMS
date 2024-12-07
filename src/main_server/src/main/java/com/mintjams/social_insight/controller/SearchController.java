@@ -16,4 +16,5 @@ public class SearchController {
         // 예시: model.addAttribute("channelTitle", channelTitle); -> 템플릿에서 사용 가능
         return "search"; // templates/search.html을 반환
     }
+
 }

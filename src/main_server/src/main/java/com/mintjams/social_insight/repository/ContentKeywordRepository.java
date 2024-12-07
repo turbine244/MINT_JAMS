@@ -17,14 +17,14 @@ public interface ContentKeywordRepository extends JpaRepository<ContentKeyword, 
     Optional<ContentKeyword> findByContentKeyAndChannel(String contentKey, Channel channel);
 
     //10개만
-    @Query(value = "SELECT * FROM Content_Keyword ck WHERE ck.channel_Id = :channelId ORDER BY ck.found DESC LIMIT 10", nativeQuery = true)
+    @Query(value = "SELECT * FROM content_keyword ck WHERE ck.channel_id = :channelId ORDER BY ck.found DESC LIMIT 10", nativeQuery = true)
     List<ContentKeyword> findTop10ByChannelIdOrderByFoundDesc(@Param("channelId") String channelId);
 
 
     @Query(
-            value = "SELECT k.comment_Key AS keyword, k.found FROM Comment_Keyword k WHERE k.channel_id = :channelId " +
+            value = "SELECT k.comment_key AS keyword, k.found FROM comment_keyword k WHERE k.channel_id = :channelId " +
                     "UNION ALL " +
-                    "SELECT c.content_Key AS keyword, c.found * 10 AS found FROM Content_Keyword c WHERE c.channel_id = :channelId " +
+                    "SELECT c.content_key AS keyword, c.found * 10 AS found FROM content_keyword c WHERE c.channel_id = :channelId " +
                     "ORDER BY found DESC LIMIT 50", nativeQuery = true
     )
 

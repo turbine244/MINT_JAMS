@@ -20,6 +20,9 @@ public class Channel {
     @Column(unique = true)
     private String channelId;
 
+    @Column
+    private String channelTitle;
+
     //컨텐츠 수
     @Column
     private Integer contentNum;
@@ -33,11 +36,13 @@ public class Channel {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
+    //조회수
     @Column
     private Integer anchorNum = 0;
 
+//    //Anchor
 //    @Column
-//    private Double sentiment = 0.0;
+//    private Integer updateAnchorNum = 0;
 
 
     // 엔티티가 처음 저장될 때 호출되는 메서드

@@ -27,8 +27,8 @@ public interface CommentKeywordRepository extends JpaRepository<CommentKeyword, 
     List<Object[]> findTop8ByChannelId(@Param("channelId") String channelId);
 
 
-    @Query(value = "SELECT ck.comment_Key, ck.found FROM Comment_Keyword ck" +
-            " WHERE ck.content_Id = :contentId ORDER BY ck.found " +
+    @Query(value = "SELECT ck.comment_Key, ck.found FROM comment_keyword ck" +
+            " WHERE ck.content_id = :contentId ORDER BY ck.found " +
             "DESC LIMIT 8", nativeQuery = true)
     List<Object[]> findTopKeywordsByContentId(@Param("contentId") String contentId);
 

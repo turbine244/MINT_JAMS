@@ -90,6 +90,12 @@
             </table>
         </div>
 
+        <!-- 인기 검색어와 최근 검색어 영역 -->
+        <div id="keywords-section">
+            <ul id="popular-keywords" class="keywords-list"></ul>
+            <ul id="recent-keywords" class="keywords-list hide"></ul>
+        </div>
+
     </div>
 
     <!--FOOTER-->
@@ -213,17 +219,91 @@
     }
 </script>
 
-<!--FDEF : DRAW WORDCLOUD-->
+
+<!--FDEF : TOGGLE SELECT-->
 <script>
+    function timeAgo(time) {
+        const updatedTime = new Date(time); // time을 Date 객체로 변환
+        const currentTime = new Date(); // 현재 시간
+        const diffMs = currentTime - updatedTime; // 밀리초 단위 차이
+        const diffSec = Math.floor(diffMs / 1000); // 초 단위
+        const diffMin = Math.floor(diffSec / 60); // 분 단위
+        const diffHours = Math.floor(diffMin / 60); // 시간 단위
+        const diffDays = Math.floor(diffHours / 24); // 일 단위
+
+        if (diffDays > 0) {
+            return `${diffDays}일 전`;
+        } else if (diffHours > 0) {
+            return `${diffHours}시간 전`;
+        } else if (diffMin > 0) {
+            return `${diffMin}분 전`;
+        } else {
+            return `방금 전`;
+        }
+    }
+
+    // 데이터를 로드하는 함수
+    async function loadKeywords(type) {
+        const container = type === 'trending' ? 'popular-keywords' : 'recent-keywords';
+        const url = type === 'trending' ? '/api/popular' : '/api/recent';
+
+        const list = document.getElementById(container);
+        list.innerHTML = ''; // 기존 내용을 지웁니다.
+
+        try {
+            console.log(`Fetching ${type} keywords from: ${url}`);
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const keywords = await response.json();
+
+            keywords.forEach(keyword => {
+                const li = document.createElement('li');
+                if (type === 'trending') {
+                    li.textContent = `${keyword.channelTitle} - 조회수: ${keyword.view}`;
+                } else if (type === 'recent') {
+                    li.textContent = `${keyword.channelTitle} - ${timeAgo(keyword.time)}`;
+                }
+                list.appendChild(li);
+            });
+        } catch (error) {
+            console.error(`Failed to load ${type} keywords:`, error);
+            alert(`검색어를 불러오는 중 오류가 발생했습니다: ${error.message}`);
+        }
+    }
+
+    // 버튼 클릭 시 데이터 표시 및 클래스 전환
+    function toggle_select(category, val) {
+        if (category === 'search') {
+            const trendingButton = document.getElementById('sel_search_trending');
+            const recentButton = document.getElementById('sel_search_recent');
+            const popularKeywords = document.getElementById('popular-keywords');
+            const recentKeywords = document.getElementById('recent-keywords');
+
+            if (val === 'trending') {
+                trendingButton.classList.add('now');
+                recentButton.classList.remove('now');
+                popularKeywords.classList.remove('hide');
+                recentKeywords.classList.add('hide');
+                loadKeywords('trending'); // 인기 검색어 로드
+            } else if (val === 'recent') {
+                recentButton.classList.add('now');
+                trendingButton.classList.remove('now');
+                recentKeywords.classList.remove('hide');
+                popularKeywords.classList.add('hide');
+                loadKeywords('recent'); // 최신 검색어 로드
+            }
+        }
+    }
+
+    // 페이지 로드 시 기본적으로 인기 검색어를 로드
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('Page loaded. Loading trending keywords...');
+        loadKeywords('trending'); // 기본적으로 인기 검색어 로드
+    });
 </script>
 
-<!--FDEF : DRAW PIE-CHART-->
-<script>
-</script>
-
-<!--FDEF : DRAW DETAILS-->
-<script>
-</script>
 
 </body>
 

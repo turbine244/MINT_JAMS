@@ -41,9 +41,6 @@
                     <td class="c2">
                         <table>
                             <tr>
-                                <td id="btn_search" onclick="toggle_search()">
-                                    <span class="tool material-symbols-outlined">search</span>
-                                </td>
                                 <td>
                                     <span class="tool material-symbols-outlined">notifications</span>
                                 </td>
@@ -53,12 +50,11 @@
                 </tr>
             </table>
 
-            <div id="msg_notify" class="notify-good">새로운 분석 결과가 있습니다!<br>페이지를 새로고침해주세요.</div>
+            <div id="msg_notify"></div>
         </div>
 
         <!--SEARCH-->
-        <div id="search-mask" class="hide"></div>
-        <div id="search" class="searchbox pos-abs hide">
+        <div id="search" class="searchbox pos-rel">
             <div class="searchbar">
                 <span class="material-symbols-outlined">search</span>
                 <form id="form_search" action="#" onsubmit="return false;"
@@ -96,100 +92,6 @@
 
         </div>
 
-        <!--CONTENT-->
-        <div id="content" class="ide">
-            <div id="content-result">
-                <div id="headline">
-                    <span id="headline-targetname">
-                        충주시
-                    </span>
-                    <span id="headline-follow">
-                        의 분석 결과를 정리했어요
-                    </span>
-                </div>
-
-
-                <div id="chart-selector">
-                    <table id="tbl_selector_chart" class="selector">
-                        <tr>
-                            <td id="sel_chart_wordCloud" class="sel now" onclick="toggle_select('chart', 'wordCloud')">
-                                <table>
-                                    <tr>
-                                        <th></th>
-                                    </tr>
-                                    <tr>
-                                        <td>전체</td>
-                                    </tr>
-                                </table>
-                            </td>
-                            <td id="sel_chart_pieChart" class="sel" onclick="toggle_select('chart', 'pieChart')">
-                                <table>
-                                    <tr>
-                                        <th></th>
-                                    </tr>
-                                    <tr>
-                                        <td>코멘트 중심</td>
-                                    </tr>
-                                </table>
-                            </td>
-                            <td id="sel_chart_details" class="sel" onclick="toggle_select('chart', 'log')">
-                                <table>
-                                    <tr>
-                                        <th></th>
-                                    </tr>
-                                    <tr>
-                                        <td>분석 상세</td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div id="chart-area">
-
-                </div>
-            </div>
-
-            <div id="channel-card">
-                <table id="tbl_channel">
-                    <tr>
-                        <td>
-                            <div id="channel-thumbnail">
-                                <div id="channel-progress-mask"></div>
-                                <div id="channel-progress"></div>
-                                <div id="channel-halo"></div>
-                                <div id="channel-image"></div>
-                                <div id="channel-numplate">7/10</div>
-                            </div>
-
-                        </td>
-                        <td>
-                            <table id="info-anchor" class="tbl_info">
-                                <tr>
-                                    <th>채널 ID
-                                        <span class="material-symbols-outlined"
-                                            style="font-size: 0.6rem; opacity: 0.4;;">
-                                            open_in_browser
-                                        </span>
-                                    </th>
-                                    <td id="ymd_found_first">@ABCDEF</td>
-                                </tr>
-                                <tr>
-                                    <th>최초 발견</th>
-                                    <td id="ymd_found_first">2024/12/12</td>
-                                </tr>
-                                <tr>
-                                    <th>최근 발견</th>
-                                    <td id="txt_found_last">23시간 59분 전</td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-
         <!--FOOTER-->
         <div id="footer">
             <div id="sky-area">
@@ -218,6 +120,8 @@
 
     <!--MAIN-->
     <script>
+        let id = document.getElementById("search");
+        id.classList.add("reposition");
     </script>
 
     <!--FDEF : NOTIFY-->

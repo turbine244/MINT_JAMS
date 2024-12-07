@@ -232,6 +232,9 @@ public class YouTubeService {
                 channelDTO.setContentNum(_videoCount);
                 channelDTO.setChannelThumbnail(_channelThumbnail);
 
+                //해당 DTO에 채널 순위 추가
+                channelDTO.setRank(getChannelRank(channelId));
+
                 System.out.println("gogogogogo3");
             }
 
@@ -994,6 +997,21 @@ public class YouTubeService {
         return recentChannels.stream()
                 .map(c -> new SearchTrendsDTO(c.getChannelTitle(), 0, c.getUpdatedAt()))
                 .collect(Collectors.toList());
+    }
+
+    public int getChannelRank(String channelId) {
+        // 모든 데이터를 anchorNum 기준 내림차순으로 가져옴
+        List<Channel> channels = channelRepository.findAllOrderByAnchorNumDesc();
+
+        // 순위 계산
+        for (int i = 0; i < channels.size(); i++) {
+            if (channels.get(i).getChannelId().equals(channelId)) {
+                return i + 1; // 0부터 시작하므로 1을 더해 순위를 반환
+            }
+        }
+
+        // 데이터가 없으면 -1 반환
+        return -1;
     }
 
 }

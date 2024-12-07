@@ -19,4 +19,8 @@ public interface ChannelRepository extends JpaRepository<Channel, String> {
     // 인기 검색어: anchorNum 기준 상위 10개
     List<Channel> findByOrderByAnchorNumDesc(Pageable pageable);
 
+    // anchorNum 기준으로 내림차순 정렬된 모든 데이터 가져오기
+    @Query("SELECT c FROM Channel c ORDER BY c.anchorNum DESC")
+    List<Channel> findAllOrderByAnchorNumDesc();
+
 }

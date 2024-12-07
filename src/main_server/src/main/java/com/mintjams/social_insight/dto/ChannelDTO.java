@@ -14,6 +14,7 @@ public class ChannelDTO {
     private String channelUrl;
     private String subscriberCount;
     private String channelThumbnail;
+    private int rank; //DB
 
     private Integer contentNum; //DB
     private String updatedAt; //DB

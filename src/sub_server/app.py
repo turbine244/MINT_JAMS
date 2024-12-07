@@ -29,9 +29,9 @@ def detect_language(text):
 
 
 
-def translate_korean_to_english(text):
+def translate_lang_to_english(text, lang):
     translator = Translator()
-    translated = translator.translate(text, src='ko', dest='en')
+    translated = translator.translate(text, src=lang, dest='en')
     return translated.text
 
 
@@ -136,14 +136,13 @@ def analyze_comments_sentiment(json_data):
     # VADER 분석기 초기화
     analyzer = SentimentIntensityAnalyzer()
     
-    if lang == 'ko':  # 한국어인 경우
-        translated_comments = translate_korean_to_english(combined_comments)
+    if lang == 'en':  # 영어인 경우
+        sentiment_scores = analyzer.polarity_scores(combined_comments)
+    else:  # 그외인 경우
+        translated_comments = translate_lang_to_english(combined_comments, lang)
         # 감정 분석
         sentiment_scores = analyzer.polarity_scores(translated_comments)
-    else:  # 영어인 경우
-        # 감정 분석
-        sentiment_scores = analyzer.polarity_scores(combined_comments)
-    
+        
     return sentiment_scores
 
 
@@ -211,3 +210,4 @@ def save_keywords_to_json(keywords, filename="keywords.json"):
 
 if __name__ == '__main__':
     app.run(debug=True)
+    

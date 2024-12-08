@@ -363,10 +363,10 @@
             let unitDeg = 360 / cntVid;
 
             document.getElementById('channel-progress').style.background
-                = "conic - gradient(var(--color_point3) "
+                = "conic-gradient(rgba(48, 131, 248, 100) "
                 + data.updateAnchorNum * unitDeg + "deg, rgba(255, 255, 255, 0) 0deg)";
 
-            document.getElementById('channel-numplate').innerText = unitDeg + "/" + cntVid;    // 10/10
+            document.getElementById('channel-numplate').innerText = data.updateAnchorNum + "/" + cntVid;    // 10/10
         }
     </script>
 

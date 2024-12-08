@@ -40,9 +40,9 @@ public class Channel {
     @Column
     private Integer anchorNum = 0;
 
-//    //Anchor
-//    @Column
-//    private Integer updateAnchorNum = 0;
+    //Anchor
+    @Column
+    private Integer updateAnchorNum = 0;
 
 
     // 엔티티가 처음 저장될 때 호출되는 메서드

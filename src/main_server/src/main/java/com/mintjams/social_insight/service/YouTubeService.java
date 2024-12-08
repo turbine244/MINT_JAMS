@@ -1001,7 +1001,7 @@ public class YouTubeService {
 
     public int getChannelRank(String channelId) {
         // 모든 데이터를 anchorNum 기준 내림차순으로 가져옴
-        List<Channel> channels = channelRepository.findAllOrderByAnchorNumDesc();
+        List<Channel> channels = channelRepository.findAllByOrderByAnchorNumDesc();
 
         // 순위 계산
         for (int i = 0; i < channels.size(); i++) {

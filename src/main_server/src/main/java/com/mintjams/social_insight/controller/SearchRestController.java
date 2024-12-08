@@ -28,7 +28,7 @@ public class SearchRestController {
             throw new IllegalArgumentException("channelTitle is required");
         }
 
-        String apiKey = apiService.getCurrentApiKey();
+        String apiKey = apiService.callApi(channelTitle);
         ChannelDTO channelDTO = youTubeService.getChannelData(channelTitle, apiKey);
 
         if (channelDTO == null || channelDTO.getChannelId() == null) {

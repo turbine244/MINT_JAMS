@@ -20,5 +20,5 @@ public class ChannelDTO {
     private String updatedAt; //DB
     private String createdAtDB;//DB
     private Integer anchorNum; //DB
-
+    private Integer updateAnchorNum;
 }

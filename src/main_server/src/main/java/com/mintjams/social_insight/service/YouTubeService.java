@@ -98,7 +98,6 @@ public class YouTubeService {
                         ? responseJson.get("nextPageToken").getAsString()
                         : null;
 
-                JsonObject inputJson;
                 // 각 컨텐츠 ID를 DB에 저장
                 for (int i = 0; i < items.size(); i++) {
                     JsonObject video = items.get(i).getAsJsonObject();
@@ -113,11 +112,6 @@ public class YouTubeService {
                         content.setCommentNum(0);
                         content.setChannel(channel);
                         contentRepository.save(content);
-
-                        // 본문 분석 작업 요청
-                        inputJson = get_data_content(apiKey, channelId, videoId);
-                        addTaskToQueue(channelId, videoId, false, inputJson);
-
                     }
                 }
 
@@ -189,8 +183,6 @@ public class YouTubeService {
             JsonObject channelInfoJsonObject = channelInfoJsonElement.getAsJsonObject();
             JsonArray channelInfoItems = channelInfoJsonObject.getAsJsonArray("items");
 
-            System.out.println("gogogogogo");
-
             if (channelInfoItems.size() > 0) {
                 JsonObject channelSnippet = channelInfoItems.get(0).getAsJsonObject().getAsJsonObject("snippet");
                 JsonObject channelStatistics = channelInfoItems.get(0).getAsJsonObject().getAsJsonObject("statistics");
@@ -220,8 +212,6 @@ public class YouTubeService {
                         .get("high").getAsJsonObject()
                         .get("url").getAsString(); // 프로필 이미지 URL
 
-                System.out.println("gogogogogo2");
-
                 // DTO에 데이터 설정
                 channelDTO.setChannelId(channelId);
 
@@ -235,7 +225,8 @@ public class YouTubeService {
                 // 해당 DTO에 채널 순위 추가
                 channelDTO.setRank(getChannelRank(channelId));
 
-                System.out.println("gogogogogo3");
+                // 업데이트된 게시글 수도 보내기
+                channelDTO.setUpdateAnchorNum(getChannelUpdateAnchorNum(channelId));
             }
 
             client.close();
@@ -421,12 +412,13 @@ public class YouTubeService {
                 commentChunk = splitJsonObject(allComments, numChunks);
 
                 // 본문 분석 작업 요청
-                addTaskToQueue(channelId, theId, false, get_data_content(apiKey, channelId, theId));
+                addTaskToQueue(channelId, theId, false, get_data_content(apiKey, channelId, theId), false);
                 System.out.println("본문" + (i + 1) + "분석 요청");
 
                 // 댓글 분석 작업 요청
                 for (int j = 0; j < numChunks; j++) {
-                    addTaskToQueue(channelId, theId, true, commentChunk.get(j));
+                    boolean isEndling = (j == numChunks - 1 ? true : false);
+                    addTaskToQueue(channelId, theId, true, commentChunk.get(j), isEndling);
                     System.out.println("댓글" + (i + 1) + "-" + (j + 1) + "분석 요청");
                 }
             }
@@ -592,7 +584,7 @@ public class YouTubeService {
 
     // 키워드 데이터 DB에 저장
     public void setKeywordData(String channelId, String idContent, boolean isComment,
-            JsonObject inputJson) {
+            JsonObject inputJson, boolean isEndling) {
 
         KeywordDTO keywordDTO = new KeywordDTO();
 
@@ -698,6 +690,16 @@ public class YouTubeService {
 
         }
 
+        if (isEndling) {
+            Channel channel = channelRepository.findById(channelId)
+                    .orElseThrow(() -> new RuntimeException("Channel not found with id: " + channelId));
+            // 아무 변수만들어서 getUpdateAnchorNum(); 해서 기존치 가져옴
+            Integer updateAnchorNum = channel.getUpdateAnchorNum();
+            // +1 해줌
+            channel.setUpdateAnchorNum(updateAnchorNum + 1);
+            // 저장
+            channelRepository.save(channel);
+        }
     }
 
     // Flask 서버로 동영상 데이터를 전송하고 받는 메서드
@@ -828,8 +830,9 @@ public class YouTubeService {
     }
 
     // 작업 큐에 추가
-    void addTaskToQueue(String channelId, String idContent, boolean isComment, JsonObject inputJson) {
-        Runnable task = () -> setKeywordData(channelId, idContent, isComment, inputJson);
+    void addTaskToQueue(String channelId, String idContent, boolean isComment, JsonObject inputJson,
+            boolean isEndling) {
+        Runnable task = () -> setKeywordData(channelId, idContent, isComment, inputJson, isEndling);
         taskQueueService.addTask(task);
         System.err.println("!!!작업 추가됨");
     }
@@ -938,4 +941,7 @@ public class YouTubeService {
         return -1;
     }
 
+    public Integer getChannelUpdateAnchorNum(String channelId) {
+        return channelRepository.findUpdateAnchorNumByChannelId(channelId);
+    }
 }

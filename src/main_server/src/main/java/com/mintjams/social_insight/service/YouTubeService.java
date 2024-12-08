@@ -48,83 +48,12 @@ public class YouTubeService {
 
     // 처음 데이터를 받아올 때 채널/콘텐츠/콘텐츠 키워드 데이터를 저장
     public void saveChannelData(ChannelDTO channelDTO, String apiKey) {
-
-        String channelId = channelDTO.getChannelId();
-
         // 채널 DB 신규 갱신
         Channel channel = new Channel();
         channel.setChannelId(channelDTO.getChannelId());
         channel.setChannelTitle(channelDTO.getChannelTitle());
         channel.setContentNum(channelDTO.getContentNum());
         channelRepository.save(channel);
-
-        try {
-            // 채널의 모든 비디오 목록 가져오기 (일단 2개)
-            String videoListUrl = "https://www.googleapis.com/youtube/v3/search?key=" + apiKey + "&channelId="
-                    + channelId + "&part=snippet&type=video&maxResults=2"; // maxResults를 2로 설정
-
-            List<JsonObject> allVideos = new ArrayList<>();
-            String nextPageToken = null;
-
-            while (true) {
-                // 페이지네이션 처리: 다음 페이지가 있다면, nextPageToken을 URL에 추가
-                String paginatedUrl = nextPageToken == null ? videoListUrl
-                        : videoListUrl + "&pageToken=" + nextPageToken;
-
-                // HTTP 요청 및 응답 처리
-                URL url = new URL(paginatedUrl);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                StringBuilder response = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-                reader.close();
-
-                // JSON 응답 파싱
-                JsonObject responseJson = JsonParser.parseString(response.toString()).getAsJsonObject();
-                JsonArray items = responseJson.getAsJsonArray("items");
-
-                // 동영상 정보 수집
-                for (JsonElement item : items) {
-                    allVideos.add(item.getAsJsonObject());
-                }
-
-                // 다음 페이지가 있다면 nextPageToken을 가져오고, 없으면 종료
-                nextPageToken = responseJson.has("nextPageToken")
-                        ? responseJson.get("nextPageToken").getAsString()
-                        : null;
-
-                // 각 컨텐츠 ID를 DB에 저장
-                for (int i = 0; i < items.size(); i++) {
-                    JsonObject video = items.get(i).getAsJsonObject();
-                    String videoId = video.getAsJsonObject("id").get("videoId").getAsString();
-
-                    // 콘텐츠 정보 DB에 등록
-                    Content content = new Content();
-                    if (!contentRepository.existsById(videoId)) {
-                        content.setContentId(videoId);
-                        // content.setCommentNum(commentCount);
-                        // 테스트 값
-                        content.setCommentNum(0);
-                        content.setChannel(channel);
-                        contentRepository.save(content);
-                    }
-                }
-
-                if (nextPageToken == null) {
-                    break; // 더 이상 페이지가 없으면 종료
-                } else {
-                    break; // 일단 한페이지만 받아보자 (5개)
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
 
     // 채널데이터 가져오기
@@ -296,7 +225,6 @@ public class YouTubeService {
 
     // 기존에 데이터가 있는 경우 분석 소요 파악
     public void checkUpdate(String channelId, String apiKey) {
-
         // 조회수 증가
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new RuntimeException("Channel not found with id: " + channelId));
@@ -389,6 +317,15 @@ public class YouTubeService {
                     if (ls_new_idContent.contains(videoId) == false) {
                         ls_new_idContent.add(videoId);
                     }
+                }
+
+                // ----------------------------------- 콘텐츠 id db에 추가
+                for (int i = 0; i < ls_new_idContent.size(); i++) {
+                    Content content = new Content();
+                    content.setContentId(ls_new_idContent.get(i));
+                    content.setCommentNum(0);
+                    content.setChannel(channel);
+                    contentRepository.save(content);
                 }
 
             } catch (Exception e) {

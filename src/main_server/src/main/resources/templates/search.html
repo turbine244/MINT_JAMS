@@ -356,7 +356,7 @@
 
         document.getElementById('txt_channel_id').innerText = data.channelId;  // 최초 발견 일자
         document.getElementById('ymd_found_first').innerText = data.createdAtDB;  // 최초 발견 일자
-        document.getElementById('txt_found_last').innerText = data.updatedAt;    // 마지막 발견
+        document.getElementById('txt_found_last').innerText = timeAgo(data.updatedAt);    // 마지막 발견
 
         // 검색 완료 바(10/10)
         let cntVid = Math.min(data.contentNum, 10);

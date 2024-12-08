@@ -354,10 +354,19 @@
             temp.style.backgroundSize = "cover";  // 이미지가 요소를 채우도록 설정
             temp.style.backgroundPosition = "center";  // 이미지 가운데 정렬
 
+            document.getElementById('txt_channel_id').innerText = data.channelId;  // 최초 발견 일자
             document.getElementById('ymd_found_first').innerText = data.createdAtDB;  // 최초 발견 일자
             document.getElementById('txt_found_last').innerText = data.updatedAt;    // 마지막 발견
-            //document.getElementById('num_anchorer').innerText = data.anchorNum;       // ANCHOR
 
+            // 검색 완료 바(10/10)
+            let cntVid = Math.min(data.contentNum, 10);
+            let unitDeg = 360 / cntVid;
+
+            document.getElementById('channel-progress').style.background
+                = "conic - gradient(var(--color_point3) "
+                + data.updateAnchorNum * unitDeg + "deg, rgba(255, 255, 255, 0) 0deg)";
+
+            document.getElementById('channel-numplate').innerText = unitDeg + "/" + cntVid;    // 10/10
         }
     </script>
 

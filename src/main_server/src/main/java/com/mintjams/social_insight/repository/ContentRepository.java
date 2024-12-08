@@ -27,7 +27,7 @@ public interface ContentRepository extends JpaRepository<Content, String> {
     List<Integer> findCommentNumsByChannelId(@Param("channelId") String channelId);
 
     @Query(value = "SELECT c.content_id FROM content c WHERE c.channel_id = :channelId " +
-            "ORDER BY c.content_id DESC LIMIT 5", nativeQuery = true)
+            "ORDER BY c.content_id DESC LIMIT 10", nativeQuery = true)
     List<String> findLatestContentIdsByChannelId(@Param("channelId") String channelId);
 
     @Query(value = "SELECT c.sentiment FROM content c " +

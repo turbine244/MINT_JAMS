@@ -1,46 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anchor</title>
     <link rel="stylesheet" href="/css/anchor.css">
+
+    <!--ICON-->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        .material-symbols-outlined {
+            font-size: 1.5rem;
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24
+        }
+    </style>
+
+    <!--FONT-->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Gasoek+One&family=Jua&family=Nanum+Brush+Script&family=Nanum+Gothic&family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Gasoek+One&family=Jua&family=Monda:wght@400..700&family=Nanum+Brush+Script&family=Nanum+Gothic&family=Noto+Sans+KR:wght@100..900&display=swap"
+        rel="stylesheet">
 </head>
-<body>
-<!-- HEADER -->
-<div class="header">
-    <div class="icon24 ico_menu" onclick="toggleMenu()"></div>
-    <div class="search">
-        <div class="icon24 ico_glass"></div>
-        <form action="#" onsubmit="return false;" onkeydown="if(event.key === 'Enter'){ searchChannel(); }">
-            <input name="channelTitle" id="txt_name_target" type="text" placeholder="Search..." />
-        </form>
-    </div>
-    <div class="credit">
-        <div class="icon24 ico_credit"></div>
-        <div class="txt_credit">999+</div>
-    </div>
-</div>
 
-<!-- FOOTER -->
-<div class="footer"></div>
+<body onselectstart='return false'>
+    <div id="master">
+        <!--HEADER-->
+        <div id="header">
+            <table id="tbl_header">
+                <tr>
+                    <td class="c1">
+                        <span class="material-symbols-outlined">anchor</span><span class="logo">ANCHOR</span>
+                    </td>
+                    <td class="c2">
+                        <table>
+                            <tr>
+                                <td>
+                                    <span class="tool material-symbols-outlined">notifications</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
 
-<!-- SCRIPT -->
-<script>
-    function searchChannel() {
-        const channelTitle = document.getElementById("txt_name_target").value;
-        if (!channelTitle) {
-            alert("채널 제목을 입력하세요.");
-            return;
+            <div id="msg_notify"></div>
+        </div>
+
+        <!--SEARCH-->
+        <div id="search" class="searchbox pos-rel">
+            <div class="searchbar">
+                <span class="material-symbols-outlined">search</span>
+                <form id="form_search" action="#" onsubmit="return false;"
+                    onkeydown="if(event.key === 'Enter'){ searchChannel(); }">
+                    <input name="channelTitle" id="txt_name_target" type="text" placeholder="Search..." />
+                </form>
+            </div>
+
+            <div id="search-selector">
+                <table id="tbl_selector_search" class="selector">
+                    <tr>
+                        <td id="sel_search_trending" class="sel now" onclick="toggle_select('search', 'trending')">
+                            <table>
+                                <tr>
+                                    <th></th>
+                                </tr>
+                                <tr>
+                                    <td>인기</td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td id="sel_search_recent" class="sel" onclick="toggle_select('search', 'recent')">
+                            <table>
+                                <tr>
+                                    <th></th>
+                                </tr>
+                                <tr>
+                                    <td>최근</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 인기 검색어와 최근 검색어 영역 -->
+            <div id="keywords-section">
+                <ul id="popular-keywords" class="keywords-list"></ul>
+                <ul id="recent-keywords" class="keywords-list hide"></ul>
+            </div>
+
+        </div>
+
+        <!--FOOTER-->
+        <div id="footer">
+            <div id="sky-area">
+                <div id="msg_footer">
+                    궁금한 인물 정보는,<br>제일 먼저 ANCHOR에서
+                </div>
+            </div>
+            <div id="sea-area">
+                <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                    viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+                    <defs>
+                        <path id="gentle-wave"
+                            d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+                    </defs>
+                    <g class="parallax">
+                        <use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(41,53,71,0.7" />
+                        <use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(41,53,71,0.5)" />
+                        <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(41,53,71,0.3)" />
+                        <use xlink:href="#gentle-wave" x="48" y="7" fill="rgba(41,53,71,1.0)" />
+                    </g>
+                </svg>
+                <div id="log-area"></div>
+            </div>
+        </div>
+    </div>
+
+    <!--MAIN-->
+    <script>
+        let id = document.getElementById("search");
+        id.classList.add("reposition");
+    </script>
+
+    <!--FDEF : NOTIFY-->
+    <script>
+        function notify(message, isGood) {
+            let id = document.getElementById("msg_notify");
+            id.innerText = message;
+
+            id.classList.remove("notify-good");
+            id.classList.remove("notify-bad");
+
+            if (isGood) {
+                notify.classList.add("notify-good");
+            }
+            else {
+                notify.classList.add("notify-bad");
+            }
+        }
+    </script>
+
+    <!-- FDEF : SEARCH CHANNEL -->
+    <script>
+        function searchChannel() {
+            const channelTitle = document.getElementById("txt_name_target").value;
+            if (!channelTitle) {
+                notify("채널 제목을 입력하세요.", false);
+                return;
+            }
+
+            // 검색 후 페이지 새로 고침 없이 데이터 로드
+            window.location.href = `/search?channelTitle=${encodeURIComponent(channelTitle)}`;
         }
 
-        // 검색 후 '/search' 페이지로 이동하면서 'channelTitle'을 URL 파라미터로 전달
-        window.location.href = `/search?channelTitle=${encodeURIComponent(channelTitle)}`;
-    }
-</script>
+        async function fetchChannelData(channelTitle) {
+            try {
+                const channelData = await fetchData("channel", { channelTitle });
+
+                // 채널 데이터 받으면 화면을 갱신하는 함수 호출
+                drawChannelCard(channelData);
+
+                const channelId = channelData.channelId;
+
+                // 추가 데이터 로드
+                await showLoading(() => loadWordCloud(channelId));
+                await showLoading(() => loadRankChart(channelId));
+                await showLoading(() => loadPieChartData(channelId));
+            } catch (error) {
+                console.error("Error while fetching data: ", error);
+                alert("데이터를 로드하는 중 오류가 발생했습니다.");
+            }
+        }
+    </script>
+
+    <!--FDEF : TOGGLE SEARCH-->
+    <script>
+        function toggle_search() {
+            let id;
+
+            id = document.getElementById('search');
+            id.classList.toggle("hide");
+
+            id = document.getElementById('search-mask');
+            id.classList.toggle("hide");
+        }
+    </script>
+
+    <!--FDEF : TOGGLE SELECT-->
+    <script>
+        function toggle_select(category, val) {
+            let id_sel;
+
+            if (category == 'search') {
+                id_sel = document.getElementById('sel_search_recent');
+                id_sel.classList.remove("now");
+                id_sel = document.getElementById('sel_search_trending');
+                id_sel.classList.remove("now");
+            }
+            else {
+                id_sel = document.getElementById('sel_chart_wordCloud');
+                id_sel.classList.remove("now");
+                id_sel = document.getElementById('sel_chart_pieChart');
+                id_sel.classList.remove("now");
+                id_sel = document.getElementById('sel_chart_details');
+                id_sel.classList.remove("now");
+            }
+
+            id_sel = document.getElementById('sel_' + category + '_' + val);
+            id_sel.classList.add("now");
+        }
+    </script>
+
+
+    <!--FDEF : TOGGLE SELECT-->
+    <script>
+        function timeAgo(time) {
+            const updatedTime = new Date(time); // time을 Date 객체로 변환
+            const currentTime = new Date(); // 현재 시간
+            const diffMs = currentTime - updatedTime; // 밀리초 단위 차이
+            const diffSec = Math.floor(diffMs / 1000); // 초 단위
+            const diffMin = Math.floor(diffSec / 60); // 분 단위
+            const diffHours = Math.floor(diffMin / 60); // 시간 단위
+            const diffDays = Math.floor(diffHours / 24); // 일 단위
+
+            if (diffDays > 0) {
+                return `${diffDays}일 전`;
+            } else if (diffHours > 0) {
+                return `${diffHours}시간 전`;
+            } else if (diffMin > 0) {
+                return `${diffMin}분 전`;
+            } else {
+                return `방금 전`;
+            }
+        }
+
+        // 데이터를 로드하는 함수
+        async function loadKeywords(type) {
+            const container = type === 'trending' ? 'popular-keywords' : 'recent-keywords';
+            const url = type === 'trending' ? '/api/popular' : '/api/recent';
+
+            const list = document.getElementById(container);
+            list.innerHTML = ''; // 기존 내용을 지웁니다.
+
+            try {
+                console.log(`Fetching ${type} keywords from: ${url}`);
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const keywords = await response.json();
+
+                keywords.forEach(keyword => {
+                    const li = document.createElement('li');
+                    if (type === 'trending') {
+                        li.textContent = `${keyword.channelTitle} - 조회수: ${keyword.view}`;
+                    } else if (type === 'recent') {
+                        li.textContent = `${keyword.channelTitle} - ${timeAgo(keyword.time)}`;
+                    }
+                    list.appendChild(li);
+                });
+            } catch (error) {
+                console.error(`Failed to load ${type} keywords:`, error);
+                alert(`검색어를 불러오는 중 오류가 발생했습니다: ${error.message}`);
+            }
+        }
+
+        // 버튼 클릭 시 데이터 표시 및 클래스 전환
+        function toggle_select(category, val) {
+            if (category === 'search') {
+                const trendingButton = document.getElementById('sel_search_trending');
+                const recentButton = document.getElementById('sel_search_recent');
+                const popularKeywords = document.getElementById('popular-keywords');
+                const recentKeywords = document.getElementById('recent-keywords');
+
+                if (val === 'trending') {
+                    trendingButton.classList.add('now');
+                    recentButton.classList.remove('now');
+                    popularKeywords.classList.remove('hide');
+                    recentKeywords.classList.add('hide');
+                    loadKeywords('trending'); // 인기 검색어 로드
+                } else if (val === 'recent') {
+                    recentButton.classList.add('now');
+                    trendingButton.classList.remove('now');
+                    recentKeywords.classList.remove('hide');
+                    popularKeywords.classList.add('hide');
+                    loadKeywords('recent'); // 최신 검색어 로드
+                }
+            }
+        }
+
+        // 페이지 로드 시 기본적으로 인기 검색어를 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Page loaded. Loading trending keywords...');
+            loadKeywords('trending'); // 기본적으로 인기 검색어 로드
+        });
+    </script>
+
 
 </body>
+
 </html>

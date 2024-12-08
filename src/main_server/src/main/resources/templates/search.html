@@ -1,420 +1,665 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anchor</title>
     <link rel="stylesheet" href="/css/anchor.css">
+
+    <!--LIB-->
+    <script src="https://cdn.zingchart.com/zingchart.min.js"></script>
+
+    <!--ICON-->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Gasoek+One&family=Jua&family=Nanum+Brush+Script&family=Nanum+Gothic&family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
-    <script src="https://cdn.zingchart.com/zingchart.min.js"></script>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        .material-symbols-outlined {
+            font-size: 1.5rem;
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24
+        }
+    </style>
+
+    <!--FONT-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Gasoek+One&family=Jua&family=Monda:wght@400..700&family=Nanum+Brush+Script&family=Nanum+Gothic&family=Noto+Sans+KR:wght@100..900&display=swap"
+        rel="stylesheet">
 </head>
-<body>
-<!-- HEADER -->
-<div class="header">
-    <div class="icon24 ico_menu" onclick="toggleMenu()"></div>
-    <div class="search">
-        <div class="icon24 ico_glass"></div>
-        <form action="#" onsubmit="return false;" onkeydown="if(event.key === 'Enter'){ searchChannel(); }">
-            <input name="channelTitle" id="txt_name_target" type="text" placeholder="Search..." />
-        </form>
-    </div>
-    <div class="credit">
-        <div class="icon24 ico_credit"></div>
-        <div class="txt_credit">999+</div>
-    </div>
-</div>
-<div id="loadingIndicator" style="display: none; text-align: center; font-size: 18px; margin: 20px;">
-    데이터를 가지고 오는 중입니다...
-</div>
-<!-- CARDBOX -->
-<div class="cardbox">
-    <!-- CHANNEL CARD -->
-    <div class="channel card">
-        <div class="channel-image" id="url_thumbnail_channel"></div>
-        <div class="channel-info">
-            <div class="channel-name" id="txt_name_channel"></div>
-            <div class="channel-link" id="txt_link_channel"></div>
-            <table class="tbl_info-native">
-                <tr>
-                    <th>채널 개설일</th>
-                    <td id="ymd_creation_channel"></td>
-                </tr>
-                <tr>
-                    <th>구독자 수</th>
-                    <td id="txt_subscriber"></td>
-                </tr>
-                <tr>
-                    <th>콘텐츠 수</th>
-                    <td id="num_content"></td>
-                </tr>
-            </table>
-            <table class="tbl_info-anchor">
-                <tr>
-                    <th>최초 발견 일자</th>
-                    <td id="ymd_found_first"></td>
-                </tr>
-                <tr>
-                    <th>마지막 발견</th>
-                    <td id="txt_found_last"></td>
-                </tr>
-                <tr>
-                    <th>ANCHOR</th>
-                    <td id="num_anchorer"></td>
-                </tr>
-            </table>
-        </div>
-    </div>
 
-    <!-- CARD DECK -->
-    <div class="deck">
-        <div class="card">
-            <div id="wordCloud"></div>
-        </div>
-        <div class="card">
-            <table id="rankChart">
-                <thead>
-                <th colspan="3">랭킹</th>
-                </thead>
-                <tbody>
-                <!-- 동적 삽입 -->
-                </tbody>
-            </table>
-        </div>
-        <div class="card">
-            <table>
+<body onselectstart='return false'>
+    <div id="master">
+        <!--HEADER-->
+        <div id="header">
+            <table id="tbl_header">
                 <tr>
-                    <td>
-                        <canvas id="pieChart" width="200" height="200"></canvas>
+                    <td class="c1">
+                        <span class="material-symbols-outlined">anchor</span><span class="logo">ANCHOR</span>
                     </td>
-                    <td>
-                        <div id="pieLegend" class="pie_legend"></div>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <div style="text-align: center;" id="sentimentDisplay">Sentiment: <span id="sentimentValue"></span></div>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2" style="text-align: center;">
-                        <button id="prevButton">&lt; Previous</button>
-                        <button id="nextButton">Next &gt;</button>
+                    <td class="c2">
+                        <table>
+                            <tr>
+                                <td id="btn_search" onclick="toggle_search()">
+                                    <span class="tool material-symbols-outlined">search</span>
+                                </td>
+                                <td>
+                                    <span class="tool material-symbols-outlined">notifications</span>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>
+
+            <div id="msg_notify" class="notify-good">새로운 분석 결과가 있습니다!<br>페이지를 새로고침해주세요.</div>
         </div>
-        <div class="card"></div>
+
+        <!--SEARCH-->
+        <div id="search-mask" class="hide"></div>
+        <div id="search" class="searchbox pos-abs hide">
+            <div class="searchbar">
+                <span class="material-symbols-outlined">search</span>
+                <form id="form_search" action="#" onsubmit="return false;"
+                    onkeydown="if(event.key === 'Enter'){ searchChannel(); }">
+                    <input name="channelTitle" id="txt_name_target" type="text" placeholder="Search..." />
+                </form>
+            </div>
+
+            <div id="search-selector">
+                <table id="tbl_selector_search" class="selector">
+                    <tr>
+                        <td id="sel_search_trending" class="sel now" onclick="toggle_select('search', 'trending')">
+                            <table>
+                                <tr>
+                                    <th></th>
+                                </tr>
+                                <tr>
+                                    <td>인기</td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td id="sel_search_recent" class="sel" onclick="toggle_select('search', 'recent')">
+                            <table>
+                                <tr>
+                                    <th></th>
+                                </tr>
+                                <tr>
+                                    <td>최근</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div id="keywords-reference" style="height: 3rem;">
+                <ul id="cel_search_trending" class="keywords-list"></ul>
+                <ul id="cel_search_recent" class="keywords-list hide"></ul>
+            </div>
+
+        </div>
+
+        <!--CONTENT-->
+        <div id="content" class="ide">
+            <div id="content-result">
+                <div id="headline">
+                    <span id="headline-targetname">
+                    </span>
+                    <span id="headline-follow">
+                        의 분석 결과를 정리했어요
+                    </span>
+                </div>
+
+
+                <div id="chart-selector">
+                    <table id="tbl_selector_chart" class="selector">
+                        <tr>
+                            <td id="sel_chart_wordCloud" class="sel now" onclick="toggle_select('chart', 'wordCloud')">
+                                <table>
+                                    <tr>
+                                        <th></th>
+                                    </tr>
+                                    <tr>
+                                        <td>전체</td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td id="sel_chart_pieChart" class="sel" onclick="toggle_select('chart', 'pieChart')">
+                                <table>
+                                    <tr>
+                                        <th></th>
+                                    </tr>
+                                    <tr>
+                                        <td>코멘트 중심</td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td id="sel_chart_details" class="sel" onclick="toggle_select('chart', 'details')">
+                                <table>
+                                    <tr>
+                                        <th></th>
+                                    </tr>
+                                    <tr>
+                                        <td>분석 상세</td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div id="chart-area">
+                    <div id="cel_chart_wordCloud" class="cel_chart"></div>
+                    <table id="cel_chart_pieChart" class="cel_chart hide">
+                        <tr>
+                            <td>
+                                <canvas id="pieChart" width="200" height="200"></canvas>
+                            </td>
+                            <td>
+                                <div id="pieLegend" class="pie_legend"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <div style="text-align: center;" id="sentimentDisplay">Sentiment: <span
+                                        id="sentimentValue"></span></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="text-align: center;">
+                                <button id="prevButton">&lt; Previous</button>
+                                <button id="nextButton">Next &gt;</button>
+                            </td>
+                        </tr>
+                    </table>
+                    <div id="cel_chart_details" class="cel_chart hide"></div>
+                </div>
+            </div>
+
+            <div id="channel-card">
+                <table id="tbl_channel">
+                    <tr>
+                        <td>
+                            <div id="channel-thumbnail">
+                                <div id="channel-progress-mask"></div>
+                                <div id="channel-progress"></div>
+                                <div id="channel-halo"></div>
+                                <div id="channel-image"></div>
+                                <div id="channel-numplate">7/10</div>
+                            </div>
+
+                        </td>
+                        <td>
+                            <table id="info-anchor" class="tbl_info">
+                                <tr>
+                                    <th>채널 ID
+                                        <span class="material-symbols-outlined"
+                                            style="font-size: 0.6rem; opacity: 0.4;;">
+                                            open_in_browser
+                                        </span>
+                                    </th>
+                                    <td id="txt_channel_id">@ABCDEF</td>
+                                </tr>
+                                <tr>
+                                    <th>최초 발견</th>
+                                    <td id="ymd_found_first">2024/12/12</td>
+                                </tr>
+                                <tr>
+                                    <th>최근 발견</th>
+                                    <td id="txt_found_last">23시간 59분 전</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!--FOOTER-->
+        <div id="footer">
+            <div id="sky-area">
+                <div id="msg_footer">
+                    궁금한 인물 정보는,<br>제일 먼저 ANCHOR에서
+                </div>
+            </div>
+            <div id="sea-area">
+                <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                    viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+                    <defs>
+                        <path id="gentle-wave"
+                            d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+                    </defs>
+                    <g class="parallax">
+                        <use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(41,53,71,0.7" />
+                        <use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(41,53,71,0.5)" />
+                        <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(41,53,71,0.3)" />
+                        <use xlink:href="#gentle-wave" x="48" y="7" fill="rgba(41,53,71,1.0)" />
+                    </g>
+                </svg>
+                <div id="log-area"></div>
+            </div>
+        </div>
     </div>
-</div>
 
-<!-- FOOTER -->
-<div class="footer"></div>
+    <!--MAIN-->
+    <script>
+        // 페이지 로드 시 초기화
+        document.addEventListener("DOMContentLoaded", () => {
+            //setupNavigationButtons();
+        });
 
-<!-- REST API 호출 및 데이터 렌더링 -->
-<script>
-
-    function showLoading() {
-        document.getElementById("loadingIndicator").style.display = "block";
-    }
-
-    function hideLoading() {
-        document.getElementById("loadingIndicator").style.display = "none";
-    }
-
-    let channelId = null;  // 채널 ID를 전역 변수로 선언
-
-    function searchChannel() {
-        const channelTitle = document.getElementById("txt_name_target").value;
-        if (!channelTitle) {
-            alert("채널 제목을 입력하세요.");
-            return;
+        function showLoading() {
+            //document.getElementById("loadingIndicator").style.display = "block";
         }
 
-        // 검색 후 페이지 새로 고침 없이 데이터 로드
-        window.location.href = `/search?channelTitle=${encodeURIComponent(channelTitle)}`;
-    }
+        function hideLoading() {
+            //document.getElementById("loadingIndicator").style.display = "none";
+        }
+
+        let channelId = null;  // 채널 ID를 전역 변수로 선언
+
+        function searchChannel() {
+            const channelTitle = document.getElementById("txt_name_target").value;
+            if (!channelTitle) {
+                notify("채널 제목을 입력하세요.", false);
+                return;
+            }
+
+            // 검색 후 페이지 새로 고침 없이 데이터 로드
+            window.location.href = `/search?channelTitle=${encodeURIComponent(channelTitle)}`;
+        }
 
 
 
-    // 주기적으로 차트만 갱신하는 함수
-    function updateCharts() {
-        if (channelId) {
-            loadWordCloud(channelId);
-            loadRankChart(channelId);
-            loadPieChartData(channelId); // 이 함수가 호출되었는지 확인
+        // 주기적으로 차트만 갱신하는 함수
+        function updateCharts() {
+            if (channelId) {
+                loadWordCloud(channelId);
+                //loadRankChart(channelId);
+                loadPieChartData(channelId); // 이 함수가 호출되었는지 확인
+            } else {
+                console.log("channelId is not set");
+            }
+        }
+
+        // URL에서 channelTitle을 가져오기
+        const urlParams = new URLSearchParams(window.location.search);
+        const channelTitle = urlParams.get('channelTitle');
+
+        if (channelTitle) {
+            console.log("Received channelTitle:", channelTitle);
+            // 데이터를 로드하는 함수 호출 가능
+            searchChannelInfo(channelTitle);
+
+            // 일정 간격(예: 5초)으로 차트 갱신
+            setInterval(() => {
+                updateCharts(channelId);
+            }, 5000); // 5000ms = 5초마다 차트 갱신
+
         } else {
-            console.log("channelId is not set");
-        }
-    }
-
-    // URL에서 channelTitle을 가져오기
-    const urlParams = new URLSearchParams(window.location.search);
-    const channelTitle = urlParams.get('channelTitle');
-
-    if (channelTitle) {
-        console.log("Received channelTitle:", channelTitle);
-        // 데이터를 로드하는 함수 호출 가능
-        searchChannelInfo(channelTitle);
-
-        // 일정 간격(예: 5초)으로 차트 갱신
-        setInterval(() => {
-            updateCharts(channelId);
-        }, 5000); // 5000ms = 5초마다 차트 갱신
-
-    } else {
-        alert("채널 제목이 없습니다.");
-    }
-
-    async function fetchData(endpoint, params) {
-        showLoading(); // 로딩 메시지 표시
-        const queryString = new URLSearchParams(params).toString();
-        try {
-            const response = await fetch(`/api/${endpoint}?${queryString}`);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            return response.json();
-        } catch (error) {
-            console.error("Error while fetching data:", error);
-            throw error;
-        } finally {
-            hideLoading(); // 로딩 메시지 숨김
-        }
-    }
-
-    async function searchChannelInfo(channelTitle) {
-        if (!channelTitle) return;
-
-        showLoading();
-        try {
-            const channelData = await fetchData("channel", { channelTitle });
-            drawChannelCard(channelData);
-            channelId = channelData.channelId; // 여기서 설정됨
-            console.log("Channel ID:", channelId); // 확인용 로그
-            updateCharts();
-        } catch (error) {
-            console.error("Error while fetching data: ", error);
-        } finally {
-            hideLoading();
-        }
-    }
-
-    function drawChannelCard(data) {
-        document.getElementById('txt_name_channel').innerText = data.channelTitle;
-        document.getElementById('txt_link_channel').innerText = data.channelUrl;
-        document.getElementById('ymd_creation_channel').innerText = data.createdAt;
-        document.getElementById('txt_subscriber').innerText = data.subscriberCount;
-        document.getElementById('num_content').innerText = data.contentNum;
-
-        const temp = document.getElementById('url_thumbnail_channel');
-        temp.style.backgroundImage = `url('${data.channelThumbnail}')`;  // 썸네일 이미지 설정
-        temp.style.backgroundSize = "cover";  // 이미지가 요소를 채우도록 설정
-        temp.style.backgroundPosition = "center";  // 이미지 가운데 정렬
-
-        document.getElementById('ymd_found_first').innerText = data.createdAtDB;  // 최초 발견 일자
-        document.getElementById('txt_found_last').innerText = data.updatedAt;    // 마지막 발견
-        document.getElementById('num_anchorer').innerText = data.anchorNum;       // ANCHOR
-
-    }
-
-
-    function drawWordCloud(data, labels) {
-        // 워드클라우드 모듈 불러오기
-        zingchart.MODULESDIR = 'https://cdn.zingchart.com/modules/';
-
-        // 워드 클라우드를 그릴 데이터 형식 준비
-        var wordset = [];
-        for (var i = 0; i < data.length; i++) {
-            wordset.push({ text: labels[i], count: data[i] });
+            alert("채널 제목이 없습니다.");
         }
 
-        // 워드클라우드 환경설정
-        var myConfig = {
-            type: 'wordcloud',
-            options: {
-                words: wordset,
-                minLength: 5, // 최소 길이
-                ignore: [""], // 빈 문자열을 무시
-                maxItems: 100, // 최대 항목 수
-                aspect: 'spiral', // 단어 배치 방식
-                colorType: 'palette',
-                palette: ['#D32F2F', '#5D4037', '#1976D2', '#E53935', '#6D4C41', '#1E88E5', '#F44336', '#795548', '#2196F3', '#EF5350', '#8D6E63', '#42A5F5'],
-                style: {
-                    fontFamily: 'Crete Round',
-                    hoverState: {
-                        backgroundColor: '#D32F2F',
-                        borderRadius: 2,
-                        fontColor: 'white'
-                    },
-                    tooltip: {
-                        text: '%text: %hits', // 툴팁 내용
-                        visible: true,
-                        alpha: 0.9,
-                        backgroundColor: '#1976D2',
-                        borderRadius: 2,
-                        fontColor: 'white',
-                        fontFamily: 'Georgia',
-                        textAlpha: 1
-                    }
+        async function fetchData(endpoint, params) {
+            showLoading(); // 로딩 메시지 표시
+            const queryString = new URLSearchParams(params).toString();
+            try {
+                const response = await fetch(`/api/${endpoint}?${queryString}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            },
-            source: {
-                fontColor: '#64B5F6',
-                fontSize: 10,
-                fontFamily: 'Georgia',
-                fontWeight: 'normal',
-                marginBottom: '10%'
+
+                return response.json();
+            } catch (error) {
+                console.error("Error while fetching data:", error);
+                throw error;
+            } finally {
+                hideLoading(); // 로딩 메시지 숨김
             }
-        };
-
-        // 워드클라우드 렌더링
-        zingchart.render({
-            id: 'wordCloud', // `wordCloud`는 HTML의 id로 설정
-            data: myConfig,
-            height: '100%',
-            width: '100%'
-        });
-    }
-
-    async function loadWordCloud(channelId) {
-        const data = await fetchData("wordcloud", { channelId });
-        drawWordCloud(data.foundList, data.keyList);
-    }
-
-
-    function drawRankChart(data, labels) {
-        // 테이블 요소 선택
-        const tableBody = document.getElementById('rankChart').querySelector('tbody');
-
-        // 기존 테이블 내용 초기화
-        tableBody.innerHTML = '';
-
-        // 데이터로 테이블 행 생성
-        let index = 0;
-        labels.forEach(() => {
-            const row = document.createElement('tr');
-
-            // 각 행에 번호, 단어, 빈도수 추가
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${labels[index]}</td>
-                <td>${'+' + data[index]}</td>
-            `;
-
-            tableBody.appendChild(row);
-            index++;
-        });
-    }
-
-
-
-    async function loadRankChart(channelId) {
-        const data = await fetchData("ranking", { channelId });
-        drawRankChart(data.foundList, data.keyList);
-    }
-
-    //파이 차트
-    let currentPage = 0; // 현재 페이지를 추적
-    let pieData = []; // 서버에서 받은 PieDTO 리스트
-
-    function updatePieChartPage() {
-        if (pieData.length === 0) return; // 데이터가 없으면 처리하지 않음
-
-        const data = pieData[currentPage];
-        drawPieChart(data.foundList, data.keyList);
-
-        // Sentiment 값 업데이트
-        document.getElementById("sentimentValue").innerText = data.sentiment.toFixed(2);
-    }
-
-    function setupNavigationButtons() {
-        const prevButton = document.getElementById("prevButton");
-        const nextButton = document.getElementById("nextButton");
-
-        prevButton.addEventListener("click", () => {
-            if (currentPage > 0) {
-                currentPage--;
-                updatePieChartPage();
-            }
-        });
-
-        nextButton.addEventListener("click", () => {
-            if (currentPage < pieData.length - 1) {
-                currentPage++;
-                updatePieChartPage();
-            }
-        });
-    }
-
-    function drawPieChart(data, labels) {
-        const canvas = document.getElementById("pieChart");
-        const ctx = canvas.getContext("2d");
-
-        const colors = [
-            "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0",
-            "#9966FF", "#FF9F40", "#3DC17C", "#FF6699"
-        ];
-        const total = data.reduce((sum, value) => sum + value, 0);
-
-        let startAngle = 0;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // 기존 캔버스 초기화
-
-        // 파이 차트 그리기
-        data.forEach((value, index) => {
-            const sliceAngle = (value / total) * 2 * Math.PI;
-
-            ctx.beginPath();
-            ctx.moveTo(canvas.width / 2, canvas.height / 2);
-            ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, startAngle, startAngle + sliceAngle);
-            ctx.closePath();
-            ctx.fillStyle = colors[index % colors.length];
-            ctx.fill();
-
-            startAngle += sliceAngle;
-        });
-
-        // 범례 추가
-        const legendContainer = document.getElementById("pieLegend");
-        legendContainer.innerHTML = ""; // 기존 범례 초기화
-
-        labels.forEach((label, index) => {
-            const legendItem = document.createElement("div");
-            legendItem.classList.add("pie_legend-item");
-
-            const colorBox = document.createElement("span");
-            colorBox.classList.add("pie_legend-color");
-            colorBox.style.backgroundColor = colors[index % colors.length];
-
-            const legendText = document.createElement("span");
-            legendText.innerText = label;
-
-            legendItem.appendChild(colorBox);
-            legendItem.appendChild(legendText);
-            legendContainer.appendChild(legendItem);
-        });
-    }
-
-    async function loadPieChartData(channelId) {
-        try {
-            const response = await fetch(`/api/piechart?channelId=${channelId}`);
-            pieData = await response.json();
-
-            currentPage = 0;
-            updatePieChartPage();
-        } catch (error) {
-            console.error("Failed to load pie chart data:", error);
         }
-    }
 
-    // 페이지 로드 시 초기화
-    document.addEventListener("DOMContentLoaded", () => {
-        setupNavigationButtons();
-    });
-</script>
+        async function searchChannelInfo(channelTitle) {
+            if (!channelTitle) return;
+
+            showLoading();
+            try {
+                const channelData = await fetchData("channel", { channelTitle });
+                drawChannelCard(channelData);
+                channelId = channelData.channelId; // 여기서 설정됨
+                console.log("Channel ID:", channelId); // 확인용 로그
+                updateCharts();
+            } catch (error) {
+                console.error("Error while fetching data: ", error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function drawChannelCard(data) {
+            document.getElementById('headline-targetname').innerText = data.channelTitle;
+            //document.getElementById('txt_link_channel').innerText = data.channelUrl;
+            //document.getElementById('ymd_creation_channel').innerText = data.createdAt;
+            //document.getElementById('txt_subscriber').innerText = data.subscriberCount;
+            //document.getElementById('num_content').innerText = data.contentNum;
+
+            const temp = document.getElementById('channel-image');
+            temp.style.backgroundImage = `url('${data.channelThumbnail}')`;  // 썸네일 이미지 설정
+            temp.style.backgroundSize = "cover";  // 이미지가 요소를 채우도록 설정
+            temp.style.backgroundPosition = "center";  // 이미지 가운데 정렬
+
+            document.getElementById('ymd_found_first').innerText = data.createdAtDB;  // 최초 발견 일자
+            document.getElementById('txt_found_last').innerText = data.updatedAt;    // 마지막 발견
+            //document.getElementById('num_anchorer').innerText = data.anchorNum;       // ANCHOR
+
+        }
+    </script>
+
+    <!--FDEF : NOTIFY-->
+    <script>
+        function notify(message, isGood) {
+            let id = document.getElementById("msg_notify");
+            id.innerText = message;
+
+            id.classList.remove("notify-good");
+            id.classList.remove("notify-bad");
+
+            if (isGood) {
+                notify.classList.add("notify-good");
+            }
+            else {
+                notify.classList.add("notify-bad");
+            }
+        }
+    </script>
+
+    <!--FDEF : TOGGLE SEARCH-->
+    <script>
+        function toggle_search() {
+            let id;
+
+            id = document.getElementById('search');
+            id.classList.toggle("hide");
+
+            id = document.getElementById('search-mask');
+            id.classList.toggle("hide");
+        }
+    </script>
+
+    <!--FDEF : TOGGLE SELECT-->
+    <script>
+        function toggle_select(category, val) {
+            let id_sel;
+
+            if (category == 'search') {
+                document.getElementById('sel_search_recent').classList.remove("now");
+                document.getElementById('sel_search_trending').classList.remove("now");
+
+                document.getElementById('cel_search_trending').classList.add('hide');
+                document.getElementById('cel_search_recent').classList.add('hide');
+
+                loadKeywords(val);
+            }
+            else {
+                document.getElementById('sel_chart_wordCloud').classList.remove("now");
+                document.getElementById('sel_chart_pieChart').classList.remove("now");
+                document.getElementById('sel_chart_details').classList.remove("now");
+
+                document.getElementById('cel_chart_wordCloud').classList.add("hide");
+                document.getElementById('cel_chart_pieChart').classList.add("hide");
+                document.getElementById('cel_chart_details').classList.add("hide");
+            }
+            document.getElementById('sel_' + category + '_' + val).classList.add("now");
+            document.getElementById('cel_' + category + '_' + val).classList.remove("hide");
+        }
+    </script>
+
+    <!--FDEF : LOAD SEARCH-REFERENCE-->
+    <script>
+        function timeAgo(time) {
+            const updatedTime = new Date(time); // time을 Date 객체로 변환
+            const currentTime = new Date(); // 현재 시간
+            const diffMs = currentTime - updatedTime; // 밀리초 단위 차이
+            const diffSec = Math.floor(diffMs / 1000); // 초 단위
+            const diffMin = Math.floor(diffSec / 60); // 분 단위
+            const diffHours = Math.floor(diffMin / 60); // 시간 단위
+            const diffDays = Math.floor(diffHours / 24); // 일 단위
+
+            if (diffDays > 0) {
+                return `${diffDays}일 전`;
+            } else if (diffHours > 0) {
+                return `${diffHours}시간 전`;
+            } else if (diffMin > 0) {
+                return `${diffMin}분 전`;
+            } else {
+                return `방금 전`;
+            }
+        }
+
+        // 데이터를 로드하는 함수
+        async function loadKeywords(type) {
+            const container = type === 'trending' ? 'cel_search_trending' : 'cel_search_recent';
+            const url = type === 'trending' ? '/api/popular' : '/api/recent';
+
+            const list = document.getElementById(container);
+            list.innerHTML = ''; // 기존 내용을 지웁니다.
+
+            try {
+                console.log(`Fetching ${type} keywords from: ${url}`);
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const keywords = await response.json();
+
+                keywords.forEach(keyword => {
+                    const li = document.createElement('li');
+                    if (type === 'trending') {
+                        li.textContent = `${keyword.channelTitle} - 조회수: ${keyword.view}`;
+                    } else if (type === 'recent') {
+                        li.textContent = `${keyword.channelTitle} - ${timeAgo(keyword.time)}`;
+                    }
+                    list.appendChild(li);
+                });
+            } catch (error) {
+                console.error(`Failed to load ${type} keywords:`, error);
+                alert(`검색어를 불러오는 중 오류가 발생했습니다: ${error.message}`);
+            }
+        }
+    </script>
+
+    <!--FDEF : WORDCLOUD; DRAW, LOAD-->
+    <script>
+        function drawWordCloud(data, labels) {
+            // 워드클라우드 모듈 불러오기
+            zingchart.MODULESDIR = 'https://cdn.zingchart.com/modules/';
+
+            // 워드 클라우드를 그릴 데이터 형식 준비
+            var wordset = [];
+            for (var i = 0; i < data.length; i++) {
+                wordset.push({ text: labels[i], count: data[i] });
+            }
+
+            // 워드클라우드 환경설정
+            var myConfig = {
+                type: 'wordcloud',
+                options: {
+                    words: wordset,
+                    minLength: 5, // 최소 길이
+                    ignore: [""], // 빈 문자열을 무시
+                    maxItems: 100, // 최대 항목 수
+                    aspect: 'spiral', // 단어 배치 방식
+                    colorType: 'palette',
+                    palette: ['#D32F2F', '#5D4037', '#1976D2', '#E53935', '#6D4C41', '#1E88E5', '#F44336', '#795548', '#2196F3', '#EF5350', '#8D6E63', '#42A5F5'],
+                    style: {
+                        fontFamily: 'Crete Round',
+                        hoverState: {
+                            backgroundColor: '#D32F2F',
+                            borderRadius: 2,
+                            fontColor: 'white'
+                        },
+                        tooltip: {
+                            text: '%text: %hits', // 툴팁 내용
+                            visible: true,
+                            alpha: 0.9,
+                            backgroundColor: '#1976D2',
+                            borderRadius: 2,
+                            fontColor: 'white',
+                            fontFamily: 'Georgia',
+                            textAlpha: 1
+                        }
+                    }
+                },
+                source: {
+                    fontColor: '#64B5F6',
+                    fontSize: 10,
+                    fontFamily: 'Georgia',
+                    fontWeight: 'normal',
+                    marginBottom: '10%'
+                }
+            };
+
+            // 워드클라우드 렌더링
+            zingchart.render({
+                id: 'cel_chart_wordCloud', // `wordCloud`는 HTML의 id로 설정
+                data: myConfig,
+                height: '100%',
+                width: '100%'
+            });
+        }
+
+        async function loadWordCloud(channelId) {
+            const data = await fetchData("wordcloud", { channelId });
+            drawWordCloud(data.foundList, data.keyList);
+        }
+
+
+    </script>
+
+    <!--FDEF : DRAW PIE-CHART-->
+    <script>
+        //파이 차트
+        let currentPage = 0; // 현재 페이지를 추적
+        let pieData = []; // 서버에서 받은 PieDTO 리스트
+
+        function updatePieChartPage() {
+            if (pieData.length === 0) return; // 데이터가 없으면 처리하지 않음
+
+            const data = pieData[currentPage];
+            drawPieChart(data.foundList, data.keyList);
+
+            // Sentiment 값 업데이트
+            let norm_score = data.sentiment.toFixed(2);
+
+            norm_score /= Math.sqrt((norm_score * norm_score) + 15);
+
+            if (norm_score < -1.0) {
+                norm_score = -1.0;
+            }
+            else if (norm_score > 1.0) {
+                norm_score = 1.0;
+            }
+
+            document.getElementById("sentimentValue").innerText = data.sentiment.toFixed(2);
+        }
+
+        function setupNavigationButtons() {
+            const prevButton = document.getElementById("prevButton");
+            const nextButton = document.getElementById("nextButton");
+
+            prevButton.addEventListener("click", () => {
+                if (currentPage > 0) {
+                    currentPage--;
+                    updatePieChartPage();
+                }
+            });
+
+            nextButton.addEventListener("click", () => {
+                if (currentPage < pieData.length - 1) {
+                    currentPage++;
+                    updatePieChartPage();
+                }
+            });
+        }
+
+        function drawPieChart(data, labels) {
+            const canvas = document.getElementById("pieChart");
+            const ctx = canvas.getContext("2d");
+
+            const colors = [
+                "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0",
+                "#9966FF", "#FF9F40", "#3DC17C", "#FF6699"
+            ];
+            const total = data.reduce((sum, value) => sum + value, 0);
+
+            let startAngle = 0;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // 기존 캔버스 초기화
+
+            // 파이 차트 그리기
+            data.forEach((value, index) => {
+                const sliceAngle = (value / total) * 2 * Math.PI;
+
+                ctx.beginPath();
+                ctx.moveTo(canvas.width / 2, canvas.height / 2);
+                ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, startAngle, startAngle + sliceAngle);
+                ctx.closePath();
+                ctx.fillStyle = colors[index % colors.length];
+                ctx.fill();
+
+                startAngle += sliceAngle;
+            });
+
+            // 범례 추가
+            const legendContainer = document.getElementById("pieLegend");
+            legendContainer.innerHTML = ""; // 기존 범례 초기화
+
+            labels.forEach((label, index) => {
+                const legendItem = document.createElement("div");
+                legendItem.classList.add("pie_legend-item");
+
+                const colorBox = document.createElement("span");
+                colorBox.classList.add("pie_legend-color");
+                colorBox.style.backgroundColor = colors[index % colors.length];
+
+                const legendText = document.createElement("span");
+                legendText.innerText = label;
+
+                legendItem.appendChild(colorBox);
+                legendItem.appendChild(legendText);
+                legendContainer.appendChild(legendItem);
+            });
+        }
+
+        async function loadPieChartData(channelId) {
+            try {
+                const response = await fetch(`/api/piechart?channelId=${channelId}`);
+                pieData = await response.json();
+
+                // 첫 번째 페이지를 로드
+                currentPage = 0;
+                updatePieChartPage();
+            } catch (error) {
+                console.error("Failed to load pie chart data:", error);
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener("DOMContentLoaded", () => {
+            setupNavigationButtons();
+        });
+    </script>
+
+    <!--FDEF : DRAW DETAILS-->
+    <script>
+    </script>
+
 </body>
+
 </html>

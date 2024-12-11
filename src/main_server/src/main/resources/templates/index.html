@@ -91,9 +91,9 @@
             </div>
 
             <!-- 인기 검색어와 최근 검색어 영역 -->
-            <div id="keywords-section">
-                <ul id="popular-keywords" class="keywords-list"></ul>
-                <ul id="recent-keywords" class="keywords-list hide"></ul>
+            <div id="keywords-reference">
+                <table id="cel_search_trending" class="keywords-list"></table>
+                <table id="cel_search_recent" class="keywords-list hide"></table>
             </div>
 
         </div>
@@ -126,8 +126,133 @@
 
     <!--MAIN-->
     <script>
-        let id = document.getElementById("search");
-        id.classList.add("reposition");
+        window.onload = function () {
+            loadKeywords("trending");
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener("DOMContentLoaded", () => {
+            setupNavigationButtons();
+        });
+
+        function showLoading() {
+            //document.getElementById("loadingIndicator").style.display = "block";
+        }
+
+        function hideLoading() {
+            //document.getElementById("loadingIndicator").style.display = "none";
+        }
+
+        let channelId = null;  // 채널 ID를 전역 변수로 선언
+
+        function searchChannel() {
+            let channelTitle = document.getElementById("txt_name_target").value;
+            if (!channelTitle) {
+                notify("채널 제목을 입력하세요.", false);
+                return;
+            }
+
+            // 검색 후 페이지 새로 고침 없이 데이터 로드
+            window.location.href = `/search?channelTitle=${encodeURIComponent(channelTitle.replace(/\s/g, ""))}`;
+        }
+
+        // 클릭으로 검색
+        function searchChannelClick(target) {
+            // 검색 후 페이지 새로 고침 없이 데이터 로드
+            window.location.href = `/search?channelTitle=${encodeURIComponent(target.replace(/\s/g, ""))}`;
+        }
+
+        // 주기적으로 차트만 갱신하는 함수
+        function updateCharts() {
+            if (channelId) {
+                loadWordCloud(channelId);
+                //loadRankChart(channelId);
+                loadPieChartData(channelId); // 이 함수가 호출되었는지 확인
+            } else {
+                console.log("channelId is not set");
+            }
+        }
+
+        // URL에서 channelTitle을 가져오기
+        const urlParams = new URLSearchParams(window.location.search);
+        const channelTitle = urlParams.get('channelTitle');
+
+        if (channelTitle) {
+            console.log("Received channelTitle:", channelTitle);
+            // 데이터를 로드하는 함수 호출 가능
+            searchChannelInfo(channelTitle);
+
+            // 일정 간격(예: 5초)으로 차트 갱신
+            setInterval(() => {
+                updateCharts(channelId);
+            }, 5000); // 5000ms = 5초마다 차트 갱신
+
+        } else {
+            //alert("채널 제목이 없습니다.");
+        }
+
+        async function fetchData(endpoint, params) {
+            showLoading(); // 로딩 메시지 표시
+            const queryString = new URLSearchParams(params).toString();
+            try {
+                const response = await fetch(`/api/${endpoint}?${queryString}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return response.json();
+            } catch (error) {
+                console.error("Error while fetching data:", error);
+                throw error;
+            } finally {
+                hideLoading(); // 로딩 메시지 숨김
+            }
+        }
+
+        async function searchChannelInfo(channelTitle) {
+            if (!channelTitle) return;
+
+            showLoading();
+            try {
+                const channelData = await fetchData("channel", { channelTitle });
+                drawChannelCard(channelData);
+                channelId = channelData.channelId; // 여기서 설정됨
+                console.log("Channel ID:", channelId); // 확인용 로그
+                updateCharts();
+            } catch (error) {
+                console.error("Error while fetching data: ", error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function drawChannelCard(data) {
+            document.getElementById('headline-targetname').innerText = data.channelTitle;
+            //document.getElementById('txt_link_channel').innerText = data.channelUrl;
+            //document.getElementById('ymd_creation_channel').innerText = data.createdAt;
+            //document.getElementById('txt_subscriber').innerText = data.subscriberCount;
+            //document.getElementById('num_content').innerText = data.contentNum;
+
+            const temp = document.getElementById('channel-image');
+            temp.style.backgroundImage = `url('${data.channelThumbnail}')`;  // 썸네일 이미지 설정
+            temp.style.backgroundSize = "cover";  // 이미지가 요소를 채우도록 설정
+            temp.style.backgroundPosition = "center";  // 이미지 가운데 정렬
+
+            document.getElementById('txt_channel_id').innerText = data.channelId;  // 최초 발견 일자
+            document.getElementById('ymd_found_first').innerText = data.createdAtDB;  // 최초 발견 일자
+            document.getElementById('txt_found_last').innerText = timeAgo(data.updatedAt);    // 마지막 발견
+
+            // 검색 완료 바(10/10)
+            let cntVid = Math.min(data.contentNum, 10);
+            let unitDeg = 360 / cntVid;
+
+            document.getElementById('channel-progress').style.background
+                = "conic-gradient(rgba(48, 131, 248, 100) "
+                + data.updateAnchorNum * unitDeg + "deg, rgba(255, 255, 255, 0) 0deg)";
+
+            document.getElementById('channel-numplate').innerText = data.updateAnchorNum + "/" + cntVid;    // 10/10
+        }
     </script>
 
     <!--FDEF : NOTIFY-->
@@ -144,39 +269,6 @@
             }
             else {
                 notify.classList.add("notify-bad");
-            }
-        }
-    </script>
-
-    <!-- FDEF : SEARCH CHANNEL -->
-    <script>
-        function searchChannel() {
-            const channelTitle = document.getElementById("txt_name_target").value;
-            if (!channelTitle) {
-                notify("채널 제목을 입력하세요.", false);
-                return;
-            }
-
-            // 검색 후 페이지 새로 고침 없이 데이터 로드
-            window.location.href = `/search?channelTitle=${encodeURIComponent(channelTitle)}`;
-        }
-
-        async function fetchChannelData(channelTitle) {
-            try {
-                const channelData = await fetchData("channel", { channelTitle });
-
-                // 채널 데이터 받으면 화면을 갱신하는 함수 호출
-                drawChannelCard(channelData);
-
-                const channelId = channelData.channelId;
-
-                // 추가 데이터 로드
-                await showLoading(() => loadWordCloud(channelId));
-                await showLoading(() => loadRankChart(channelId));
-                await showLoading(() => loadPieChartData(channelId));
-            } catch (error) {
-                console.error("Error while fetching data: ", error);
-                alert("데이터를 로드하는 중 오류가 발생했습니다.");
             }
         }
     </script>
@@ -200,27 +292,29 @@
             let id_sel;
 
             if (category == 'search') {
-                id_sel = document.getElementById('sel_search_recent');
-                id_sel.classList.remove("now");
-                id_sel = document.getElementById('sel_search_trending');
-                id_sel.classList.remove("now");
+                document.getElementById('sel_search_recent').classList.remove("now");
+                document.getElementById('sel_search_trending').classList.remove("now");
+
+                document.getElementById('cel_search_trending').classList.add('hide');
+                document.getElementById('cel_search_recent').classList.add('hide');
+
+                loadKeywords(val);
             }
             else {
-                id_sel = document.getElementById('sel_chart_wordCloud');
-                id_sel.classList.remove("now");
-                id_sel = document.getElementById('sel_chart_pieChart');
-                id_sel.classList.remove("now");
-                id_sel = document.getElementById('sel_chart_details');
-                id_sel.classList.remove("now");
-            }
+                document.getElementById('sel_chart_wordCloud').classList.remove("now");
+                document.getElementById('sel_chart_pieChart').classList.remove("now");
+                document.getElementById('sel_chart_details').classList.remove("now");
 
-            id_sel = document.getElementById('sel_' + category + '_' + val);
-            id_sel.classList.add("now");
+                document.getElementById('cel_chart_wordCloud').classList.add("hide");
+                document.getElementById('cel_chart_pieChart').classList.add("hide");
+                document.getElementById('cel_chart_details').classList.add("hide");
+            }
+            document.getElementById('sel_' + category + '_' + val).classList.add("now");
+            document.getElementById('cel_' + category + '_' + val).classList.remove("hide");
         }
     </script>
 
-
-    <!--FDEF : TOGGLE SELECT-->
+    <!--FDEF : LOAD SEARCH-REFERENCE-->
     <script>
         function timeAgo(time) {
             const updatedTime = new Date(time); // time을 Date 객체로 변환
@@ -244,7 +338,7 @@
 
         // 데이터를 로드하는 함수
         async function loadKeywords(type) {
-            const container = type === 'trending' ? 'popular-keywords' : 'recent-keywords';
+            const container = type === 'trending' ? 'cel_search_trending' : 'cel_search_recent';
             const url = type === 'trending' ? '/api/popular' : '/api/recent';
 
             const list = document.getElementById(container);
@@ -258,52 +352,242 @@
                 }
                 const keywords = await response.json();
 
+                let cnt = 1;
                 keywords.forEach(keyword => {
-                    const li = document.createElement('li');
+                    const tr = document.createElement('tr');
                     if (type === 'trending') {
-                        li.textContent = `${keyword.channelTitle} - 조회수: ${keyword.view}`;
+                        tr.innerHTML
+                            = "<td>" + (cnt++) + "</td>"
+                            + "<td>" + (keyword.channelTitle) + "</td>"
+                            + "<td>" + (keyword.view) + "</td>";
+                        tr.addEventListener("click", () => {
+                            searchChannelClick(keyword.channelTitle);
+                        });
                     } else if (type === 'recent') {
-                        li.textContent = `${keyword.channelTitle} - ${timeAgo(keyword.time)}`;
+                        tr.innerHTML
+                            = "<td>" + (cnt++) + "</td>"
+                            + "<td>" + (keyword.channelTitle) + "</td>"
+                            + "<td>" + timeAgo(keyword.time) + "</td>";
+                        tr.addEventListener("click", () => {
+                            searchChannelClick(keyword.channelTitle);
+                        });
                     }
-                    list.appendChild(li);
+                    list.appendChild(tr);
                 });
             } catch (error) {
                 console.error(`Failed to load ${type} keywords:`, error);
                 alert(`검색어를 불러오는 중 오류가 발생했습니다: ${error.message}`);
             }
         }
+    </script>
 
-        // 버튼 클릭 시 데이터 표시 및 클래스 전환
-        function toggle_select(category, val) {
-            if (category === 'search') {
-                const trendingButton = document.getElementById('sel_search_trending');
-                const recentButton = document.getElementById('sel_search_recent');
-                const popularKeywords = document.getElementById('popular-keywords');
-                const recentKeywords = document.getElementById('recent-keywords');
+    <!--FDEF : WORDCLOUD; DRAW, LOAD-->
+    <script>
+        function drawWordCloud(data, labels) {
+            // 워드클라우드 모듈 불러오기
+            zingchart.MODULESDIR = 'https://cdn.zingchart.com/modules/';
 
-                if (val === 'trending') {
-                    trendingButton.classList.add('now');
-                    recentButton.classList.remove('now');
-                    popularKeywords.classList.remove('hide');
-                    recentKeywords.classList.add('hide');
-                    loadKeywords('trending'); // 인기 검색어 로드
-                } else if (val === 'recent') {
-                    recentButton.classList.add('now');
-                    trendingButton.classList.remove('now');
-                    recentKeywords.classList.remove('hide');
-                    popularKeywords.classList.add('hide');
-                    loadKeywords('recent'); // 최신 검색어 로드
+            // 워드 클라우드를 그릴 데이터 형식 준비
+            var wordset = [];
+            for (var i = 0; i < data.length; i++) {
+                wordset.push({ text: labels[i], count: data[i] });
+            }
+
+            // 워드클라우드 환경설정
+            var myConfig = {
+                type: 'wordcloud',
+                options: {
+                    words: wordset,
+                    minLength: 5, // 최소 길이
+                    ignore: [""], // 빈 문자열을 무시
+                    maxItems: 100, // 최대 항목 수
+                    aspect: 'spiral', // 단어 배치 방식
+                    colorType: 'palette',
+                    palette: ['#D32F2F', '#5D4037', '#1976D2', '#E53935', '#6D4C41', '#1E88E5', '#F44336', '#795548', '#2196F3', '#EF5350', '#8D6E63', '#42A5F5'],
+                    style: {
+                        fontFamily: 'Crete Round',
+                        hoverState: {
+                            backgroundColor: '#D32F2F',
+                            borderRadius: 2,
+                            fontColor: 'white'
+                        },
+                        tooltip: {
+                            text: '%text: %hits', // 툴팁 내용
+                            visible: true,
+                            alpha: 0.9,
+                            backgroundColor: '#1976D2',
+                            borderRadius: 2,
+                            fontColor: 'white',
+                            fontFamily: 'Georgia',
+                            textAlpha: 1
+                        }
+                    }
+                },
+                source: {
+                    fontColor: '#64B5F6',
+                    fontSize: 10,
+                    fontFamily: 'Georgia',
+                    fontWeight: 'normal',
+                    marginBottom: '10%'
                 }
+            };
+
+            // 워드클라우드 렌더링
+            zingchart.render({
+                id: 'cel_chart_wordCloud', // `wordCloud`는 HTML의 id로 설정
+                data: myConfig,
+                height: '100%',
+                width: '100%'
+            });
+        }
+
+        async function loadWordCloud(channelId) {
+            const data = await fetchData("wordcloud", { channelId });
+            drawWordCloud(data.foundList, data.keyList);
+        }
+
+
+    </script>
+
+    <!--FDEF : DRAW PIE-CHART-->
+    <script>
+        //파이 차트
+        let currentPage = 0; // 현재 페이지를 추적
+        let pieData = []; // 서버에서 받은 PieDTO 리스트
+
+        function updatePieChartPage() {
+            // 유효하지 않은 데이터 스킵
+            while (
+                currentPage < pieData.length &&
+                (!pieData[currentPage].foundList || pieData[currentPage].foundList.length === 0)
+            ) {
+                console.warn(`Skipping page ${currentPage} due to empty data.`);
+                currentPage++;
+            }
+
+            // 모든 페이지를 넘어가면 종료
+            if (currentPage >= pieData.length) {
+                console.error("No valid data available to display.");
+                document.getElementById("pieChart").style.display = "none";
+                document.getElementById("sentimentDisplay").innerText = "No data available";
+                return;
+            }
+
+            const data = pieData[currentPage];
+            console.log("Rendering Pie Chart for Page:", currentPage, data);
+
+            drawPieChart(data.foundList, data.keyList); // 차트 그리기
+
+            // Sentiment 값 업데이트
+            const sentiment = data.sentiment.toFixed(2);
+            document.getElementById("sentimentValue").innerText = sentiment;
+
+            // 버튼 상태 업데이트
+            document.getElementById("prevButton").disabled = currentPage === 0;
+            document.getElementById("nextButton").disabled = currentPage >= pieData.length - 1;
+        }
+
+        function setupNavigationButtons() {
+            const prevButton = document.getElementById("prevButton");
+            const nextButton = document.getElementById("nextButton");
+
+            prevButton.addEventListener("click", () => {
+                if (currentPage > 0) {
+                    currentPage--; // 이전 페이지로 이동
+                    updatePieChartPage(); // 페이지 업데이트
+                }
+            });
+
+            nextButton.addEventListener("click", () => {
+                if (currentPage < pieData.length - 1) {
+                    currentPage++; // 다음 페이지로 이동
+                    updatePieChartPage(); // 페이지 업데이트
+                }
+            });
+        }
+
+        function drawPieChart(data, labels) {
+            const canvas = document.getElementById("pieChart");
+            const ctx = canvas.getContext("2d");
+
+            const colors = [
+                "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0",
+                "#9966FF", "#FF9F40", "#3DC17C", "#FF6699"
+            ];
+            const total = data.reduce((sum, value) => sum + value, 0);
+
+            let startAngle = 0;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // 기존 캔버스 초기화
+
+            // 파이 차트 그리기
+            data.forEach((value, index) => {
+                const sliceAngle = (value / total) * 2 * Math.PI;
+
+                ctx.beginPath();
+                ctx.moveTo(canvas.width / 2, canvas.height / 2);
+                ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, startAngle, startAngle + sliceAngle);
+                ctx.closePath();
+                ctx.fillStyle = colors[index % colors.length];
+                ctx.fill();
+
+                startAngle += sliceAngle;
+            });
+
+            // 범례 추가
+            const legendContainer = document.getElementById("pieLegend");
+            legendContainer.innerHTML = ""; // 기존 범례 초기화
+
+            labels.forEach((label, index) => {
+                const legendItem = document.createElement("div");
+                legendItem.classList.add("pie_legend-item");
+
+                const colorBox = document.createElement("span");
+                colorBox.classList.add("pie_legend-color");
+                colorBox.style.backgroundColor = colors[index % colors.length];
+
+                const legendText = document.createElement("span");
+                legendText.innerText = label;
+
+                legendItem.appendChild(colorBox);
+                legendItem.appendChild(legendText);
+                legendContainer.appendChild(legendItem);
+            });
+        }
+
+        async function loadPieChartData(channelId) {
+            try {
+                const response = await fetch(`/api/piechart?channelId=${channelId}`);
+                const rawData = await response.json();
+
+                // 유효한 데이터만 필터링
+                pieData = rawData.filter(
+                    (data) => data.foundList && data.foundList.length > 0
+                );
+
+                if (!pieData || pieData.length === 0) {
+                    console.error("No valid data received for pie chart.");
+                    document.getElementById("pieChart").style.display = "none";
+                    document.getElementById("sentimentDisplay").innerText = "아직 테이터가 준비되지 않았습니다.";
+                    return;
+                }
+
+                console.log("Filtered Pie Data Loaded:", pieData);
+
+                // 첫 페이지로 초기화
+                currentPage = 0;
+                updatePieChartPage(); // 첫 페이지 차트 그리기
+            } catch (error) {
+                console.error("Failed to load pie chart data:", error);
             }
         }
 
-        // 페이지 로드 시 기본적으로 인기 검색어를 로드
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('Page loaded. Loading trending keywords...');
-            loadKeywords('trending'); // 기본적으로 인기 검색어 로드
-        });
+
     </script>
 
+    <!--FDEF : DRAW DETAILS-->
+    <script>
+    </script>
 
 </body>
 

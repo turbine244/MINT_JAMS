@@ -300,6 +300,24 @@ table th {
 
 /* PIE */
 
+#cel_chart_pieChart {
+    width: 100%;
+    table-layout: fixed;
+}
+
+#cel_chart_pieChart tr:nth-child(1) {
+    padding-top: 1rem;
+}
+
+#cel_chart_pieChart tr:nth-child(2) {
+    height: 6rem;
+}
+
+#cel_chart_pieChart tr td:nth-child(1) {
+    text-align: right;
+    padding-right: 1rem;
+}
+
 .pie_legend {
     display: flex;
     flex-direction: column;
@@ -495,4 +513,113 @@ table th {
     width: 100%;
     height: calc(100vh - var(--size_art));
     background-color: var(--color_point4);
+}
+
+/*kref*/
+
+#keywords-reference {
+    height: 6rem;
+    padding-left: 1rem;
+}
+
+.keywords-list {
+    table-layout: fixed;
+    font-size: 0.8rem;
+}
+
+.keywords-list tr td:nth-child(1) {
+    text-align: right;
+    width: 1rem;
+    padding-right: 1rem;
+}
+
+.keywords-list tr td:nth-child(2) {
+    text-align: left;
+    color: var(--color_point3);
+}
+
+.keywords-list tr td:nth-child(3) {
+    text-align: right;
+    width: 8rem;
+    padding-right: 1rem;
+}
+
+/* details */
+#cel_chart_details {
+    padding-top: 1rem;
+}
+
+#tbl_chart_details {
+    table-layout: fixed;
+    text-align: center;
+}
+
+#details_numeric {
+    height: 2rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.8rem;
+}
+
+#totalView {
+    font-size: 2rem;
+    color: var(--color_point4);
+}
+
+#rankChart {
+    width: 100%;
+    padding-left: 32px;
+    padding-right: 32px;
+}
+
+#rankChart tr td:nth-child(2) {
+    color: rgb(0, 140, 255);
+}
+
+#rankChart tr td:nth-child(3) {
+    color: rgb(255, 0, 89);
+    text-align: right;
+}
+
+.details_head {
+    border-bottom: 1px solid var(--color_point0);
+    margin-bottom: 0.4rem;
+}
+
+/*slide*/
+
+.animated-title {
+    font-size: 60px;
+    font-family: 'Raleway', Sans-serif;
+    font-weight: 300;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    padding: 100px 0;
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+
+.animated-title .track {
+    position: absolute;
+    white-space: nowrap;
+    will-change: transform;
+    animation: marquee 60s linear infinite;
+}
+
+@keyframes marquee {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+@media (hover: hover) and (min-width: 700px) {
+    .animated-title .content {
+        -webkit-transform: translateY(calc(100% - 8rem));
+        transform: translateY(calc(100% - 8rem));
+    }
 }

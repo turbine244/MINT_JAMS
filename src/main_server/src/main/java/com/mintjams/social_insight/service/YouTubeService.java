@@ -207,7 +207,7 @@ public class YouTubeService {
                     JsonArray commentItems = commentJsonObject.getAsJsonArray("items");
                     Integer lastPageCommentCount = commentItems.size();
 
-                    if (lastPageCommentCount < 100) {
+                    if ((pageCount > 2) && (lastPageCommentCount < 100)) {
                         pageCount--;
                     }
                     break;

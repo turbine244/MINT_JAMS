@@ -8,8 +8,8 @@ spring:
     #    각자 PC에 만들어놓은 Database이름을 써야 합니다.
     url: jdbc:mysql://localhost:3306/mint_jams_dev?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     #    mysql에 생성한 사용자 계정 정보를 써야 합니다.
-    username: user_sj
-    password: 1238
+    username: root
+    password: 8957
   thymeleaf:
     cache: false
 
@@ -20,3 +20,6 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: update
+
+api:
+  keys: "AIzaSyDbowHorDXk6MxNrO87U0wzefb5WtrAf5g"

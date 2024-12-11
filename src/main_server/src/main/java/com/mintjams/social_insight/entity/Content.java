@@ -16,6 +16,9 @@ public class Content {
     @Column(unique = true)
     private String contentId;
 
+    @Column
+    private String contentTitle;
+
     //채널id(외래키)
     @ManyToOne
     @JoinColumn(name = "channel_id")

@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,7 +19,7 @@ public class ChannelDTO {
     private int rank; //DB
 
     private Integer contentNum; //DB
-    private String updatedAt; //DB
+    private LocalDateTime updatedAt; //DB
     private String createdAtDB;//DB
     private Integer anchorNum; //DB
     private Integer updateAnchorNum;

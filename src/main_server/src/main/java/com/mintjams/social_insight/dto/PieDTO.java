@@ -14,6 +14,7 @@ import java.util.List;
 public class PieDTO {
 
     private String contentId;
+    private String contentTitle;
     private List<String> keyList;
     private List<Integer> foundList;
     private Double sentiment;

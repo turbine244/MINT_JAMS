@@ -238,6 +238,7 @@ public class YouTubeService {
         if (channel.getAnchorNum() == 1) {
             // 비디오 ID 및 댓글 수 리스트 만들기
             List<String> ls_new_idContent = new ArrayList<>();
+            List<String> ls_new_titleContent = new ArrayList<>();
 
             try {
                 // ----------------------------------- 최신순 영상 10개 로드
@@ -288,6 +289,7 @@ public class YouTubeService {
 
                 JsonObject videoJson;
                 String videoId;
+                String title;
 
                 int cntDate = 0;
                 int cntRele = 0;
@@ -300,9 +302,12 @@ public class YouTubeService {
                     // 관련성 id 추가
                     videoJson = itemsRelevance.get(cntRele++).getAsJsonObject();
                     videoId = videoJson.getAsJsonObject("id").get("videoId").getAsString();
+                    title = videoJson.getAsJsonObject("snippet").get("title").getAsString();
 
-                    if (ls_new_idContent.contains(videoId) == false) {
+
+                    if (!ls_new_idContent.contains(videoId)) {
                         ls_new_idContent.add(videoId);
+                        ls_new_titleContent.add(title); // title도 함께 저장
                     }
 
                     // 다 채우면 탈출(2)
@@ -313,16 +318,20 @@ public class YouTubeService {
                     // 최신순 id 추가
                     videoJson = itemsDate.get(cntDate++).getAsJsonObject();
                     videoId = videoJson.getAsJsonObject("id").get("videoId").getAsString();
+                    title = videoJson.getAsJsonObject("snippet").get("title").getAsString();
 
-                    if (ls_new_idContent.contains(videoId) == false) {
+                    if (!ls_new_idContent.contains(videoId)) {
                         ls_new_idContent.add(videoId);
+                        ls_new_titleContent.add(title); // title도 함께 저장
                     }
                 }
 
-                // ----------------------------------- 콘텐츠 id db에 추가
+                // ----------------------------------- 콘텐츠 id와 title db에 추가
                 for (int i = 0; i < ls_new_idContent.size(); i++) {
                     Content content = new Content();
                     content.setContentId(ls_new_idContent.get(i));
+                    content.setContentTitle(ls_new_titleContent.get(i));
+
                     content.setCommentNum(0);
                     content.setChannel(channel);
                     contentRepository.save(content);
@@ -521,7 +530,7 @@ public class YouTubeService {
 
     // 키워드 데이터 DB에 저장
     public void setKeywordData(String channelId, String idContent, boolean isComment,
-            JsonObject inputJson, boolean isEndling) {
+                               JsonObject inputJson, boolean isEndling) {
 
         KeywordDTO keywordDTO = new KeywordDTO();
 
@@ -745,9 +754,11 @@ public class YouTubeService {
         // Step 3: Create PieDTO objects and add them to the result list
         List<PieDTO> result = new ArrayList<>();
         for (String contentId : contentIds) {
+            String title = contentRepository.findContentTitleByContentId(contentId, channelId);
             Double sentiment = contentRepository.findSentimentByContentId(contentId, channelId);
             PieDTO pieDTO = new PieDTO();
             pieDTO.setContentId(contentId);
+            pieDTO.setContentTitle(title);
             pieDTO.setKeyList(keyMap.get(contentId));
             pieDTO.setFoundList(foundMap.get(contentId));
             pieDTO.setSentiment(sentiment);
@@ -768,7 +779,7 @@ public class YouTubeService {
 
     // 작업 큐에 추가
     void addTaskToQueue(String channelId, String idContent, boolean isComment, JsonObject inputJson,
-            boolean isEndling) {
+                        boolean isEndling) {
         Runnable task = () -> setKeywordData(channelId, idContent, isComment, inputJson, isEndling);
         taskQueueService.addTask(task);
         System.err.println("!!!작업 추가됨");
@@ -824,10 +835,9 @@ public class YouTubeService {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDateTime fullCreatedAt = channel.getCreatedAt();
-        LocalDateTime fullUpdateAt = channel.getCreatedAt();
+        LocalDateTime updateAt = channel.getCreatedAt();
 
         String createAtDB = getFormattedCreatedAt(fullCreatedAt);
-        String updateAt = getFormattedCreatedAt(fullUpdateAt);
 
         channelDTO.setCreatedAtDB(createAtDB);
         channelDTO.setUpdatedAt(updateAt);

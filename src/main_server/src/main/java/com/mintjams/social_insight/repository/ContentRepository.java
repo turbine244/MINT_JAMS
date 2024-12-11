@@ -34,5 +34,9 @@ public interface ContentRepository extends JpaRepository<Content, String> {
             "WHERE c.content_id = :contentId AND c.channel_id = :channelId", nativeQuery = true)
     Double findSentimentByContentId(@Param("contentId") String contentId, @Param("channelId") String channelId);
 
+    @Query(value = "SELECT c.content_title FROM content c " +
+            "WHERE c.content_id = :contentId AND c.channel_id = :channelId", nativeQuery = true)
+    String findContentTitleByContentId(@Param("contentId") String contentId, @Param("channelId") String channelId);
+
 
 }

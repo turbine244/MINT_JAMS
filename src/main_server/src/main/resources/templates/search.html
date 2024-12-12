@@ -294,6 +294,10 @@
 
     <!--MAIN-->
     <script>
+        window.onload = function () {
+            loadKeywords("trending");
+        }
+
         let data_wordCloud_owning = null;
         let data_pieChart_owning = null;
 
@@ -323,7 +327,11 @@
             window.location.href = `/search?channelTitle=${encodeURIComponent(channelTitle)}`;
         }
 
-
+        // 클릭으로 검색
+        function searchChannelClick(target) {
+            // 검색 후 페이지 새로 고침 없이 데이터 로드
+            window.location.href = `/search?channelTitle=${encodeURIComponent(target.replace(/\s/g, ""))}`;
+        }
 
         // 주기적으로 차트만 갱신하는 함수
         function updateCharts() {

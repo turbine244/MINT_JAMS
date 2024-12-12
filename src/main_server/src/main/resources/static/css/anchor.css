@@ -625,11 +625,13 @@ table th {
 }
 
 #load-pane {
+    position: absolute;
     display: flex;
     justify-content: center;
     align-items: center;
     width: 100%;
     height: 100%;
+    background-color: white;
 }
 
 #load-icon {

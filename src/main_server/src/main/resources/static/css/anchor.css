@@ -379,7 +379,7 @@ table th {
     border-radius: 65536rem;
     margin: 0 auto;
     rotate: 180deg;
-    background: conic-gradient(var(--color_point3) 252deg, rgba(255, 255, 255, 0) 0deg);
+    background: conic-gradient(var(--color_point3) 0deg, rgba(255, 255, 255, 0) 0deg);
 }
 
 #channel-halo {

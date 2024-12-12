@@ -623,3 +623,20 @@ table th {
         transform: translateY(calc(100% - 8rem));
     }
 }
+
+#load-pane {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+#load-icon {
+    background-image: url('https://github.com/turbine244/MINT_JAMS/blob/Alpha_1207_new_face/resrc/icons/loading-gif.gif?raw=true');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    width: 2rem;
+    height: 2rem;
+}

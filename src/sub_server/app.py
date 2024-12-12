@@ -29,9 +29,9 @@ def detect_language(text):
 
 
 
-def translate_korean_to_english(text):
+def translate_lang_to_english(text, lang):
     translator = Translator()
-    translated = translator.translate(text, src='ko', dest='en')
+    translated = translator.translate(text, src=lang, dest='en')
     return translated.text
 
 
@@ -59,7 +59,7 @@ def remove_english_stopwords(keyword):
     stopwords = {"the", "and", "or", "but", "however", "therefore", "moreover", "furthermore", 
                  "thus", "meanwhile", "instead", "nevertheless", "otherwise", "also", "yet", "so", 
                  "a", "an", "this", "that", "he", "him", "she", "her", "they", "them", "is", "am",
-                "are", "was", "were", "in", "on", "at", "by", "for"}
+                "are", "was", "were", "in", "on", "at", "by", "for", "shorts"}
     # 키워드가 불필요한 단어라면 빈 문자열 반환
     return "" if keyword.lower() in stopwords else keyword
 
@@ -136,14 +136,13 @@ def analyze_comments_sentiment(json_data):
     # VADER 분석기 초기화
     analyzer = SentimentIntensityAnalyzer()
     
-    if lang == 'ko':  # 한국어인 경우
-        translated_comments = translate_korean_to_english(combined_comments)
+    if lang == 'en':  # 영어인 경우
+        sentiment_scores = analyzer.polarity_scores(combined_comments)
+    else:  # 그외인 경우
+        translated_comments = translate_lang_to_english(combined_comments, lang)
         # 감정 분석
         sentiment_scores = analyzer.polarity_scores(translated_comments)
-    else:  # 영어인 경우
-        # 감정 분석
-        sentiment_scores = analyzer.polarity_scores(combined_comments)
-    
+        
     return sentiment_scores
 
 

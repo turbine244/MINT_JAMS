@@ -19,7 +19,7 @@ public class FlaskRequestService {
             Runnable task = taskQueueService.getTask();
             task.run(); // 작업 실행
         } else {
-            System.out.println("큐에 처리할 작업이 없습니다.");
+            //System.out.println("큐에 처리할 작업이 없습니다.");
         }
     }
 }

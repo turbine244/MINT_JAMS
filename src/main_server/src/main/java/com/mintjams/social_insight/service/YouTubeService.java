@@ -304,7 +304,6 @@ public class YouTubeService {
                     videoId = videoJson.getAsJsonObject("id").get("videoId").getAsString();
                     title = videoJson.getAsJsonObject("snippet").get("title").getAsString();
 
-
                     if (!ls_new_idContent.contains(videoId)) {
                         ls_new_idContent.add(videoId);
                         ls_new_titleContent.add(title); // title도 함께 저장
@@ -349,7 +348,7 @@ public class YouTubeService {
             for (int i = 0; i < numSubject; i++) {
                 // 분석할 콘텐츠의 ID
                 String theId = ls_new_idContent.get(i);
-                Integer numChunks = Math.min(getCommentFullPageCount(apiKey, theId), 10); // 최대 10페이지
+                Integer numChunks = Math.min(getCommentFullPageCount(apiKey, theId), 3); // 최대 페이지 지정
 
                 // 전부 읽어서
                 allComments = get_data_comment(apiKey, theId, numChunks);
@@ -358,13 +357,23 @@ public class YouTubeService {
                 commentChunk = splitJsonObject(allComments, numChunks);
 
                 // 본문 분석 작업 요청
-                addTaskToQueue(channelId, theId, false, get_data_content(apiKey, channelId, theId), false);
+                if (i == 0) {
+                    // 첫 분석이면 즉시 실행
+                    setKeywordData(channelId, theId, false, get_data_content(apiKey, channelId, theId), false);
+                } else {
+                    addTaskToQueue(channelId, theId, false, get_data_content(apiKey, channelId, theId), false);
+                }
                 System.out.println("본문" + (i + 1) + "분석 요청");
 
                 // 댓글 분석 작업 요청
                 for (int j = 0; j < numChunks; j++) {
                     boolean isEndling = (j == numChunks - 1 ? true : false);
-                    addTaskToQueue(channelId, theId, true, commentChunk.get(j), isEndling);
+                    if (j == 0) {
+                        // 첫 분석이면 즉시 실행
+                        setKeywordData(channelId, theId, true, commentChunk.get(j), isEndling);
+                    } else {
+                        addTaskToQueue(channelId, theId, true, commentChunk.get(j), isEndling);
+                    }
                     System.out.println("댓글" + (i + 1) + "-" + (j + 1) + "분석 요청");
                 }
             }
@@ -530,9 +539,7 @@ public class YouTubeService {
 
     // 키워드 데이터 DB에 저장
     public void setKeywordData(String channelId, String idContent, boolean isComment,
-                               JsonObject inputJson, boolean isEndling) {
-
-        KeywordDTO keywordDTO = new KeywordDTO();
+            JsonObject inputJson, boolean isEndling) {
 
         // 동영상 정보와 댓글을 JSON 형태로 Flask 서버에 보낼 준비 완료
         // Flask 서버로 본문 또는 댓글 정보 전송
@@ -636,16 +643,20 @@ public class YouTubeService {
 
         }
 
+        // DB 수정
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new RuntimeException("Channel not found with id: " + channelId));
+
+        // 게시글 완료 수
         if (isEndling) {
-            Channel channel = channelRepository.findById(channelId)
-                    .orElseThrow(() -> new RuntimeException("Channel not found with id: " + channelId));
             // 아무 변수만들어서 getUpdateAnchorNum(); 해서 기존치 가져옴
             Integer updateAnchorNum = channel.getUpdateAnchorNum();
             // +1 해줌
             channel.setUpdateAnchorNum(updateAnchorNum + 1);
-            // 저장
-            channelRepository.save(channel);
         }
+
+        // 저장
+        channelRepository.save(channel);
     }
 
     // Flask 서버로 동영상 데이터를 전송하고 받는 메서드
@@ -779,7 +790,7 @@ public class YouTubeService {
 
     // 작업 큐에 추가
     void addTaskToQueue(String channelId, String idContent, boolean isComment, JsonObject inputJson,
-                        boolean isEndling) {
+            boolean isEndling) {
         Runnable task = () -> setKeywordData(channelId, idContent, isComment, inputJson, isEndling);
         taskQueueService.addTask(task);
         System.err.println("!!!작업 추가됨");
@@ -835,7 +846,7 @@ public class YouTubeService {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDateTime fullCreatedAt = channel.getCreatedAt();
-        LocalDateTime updateAt = channel.getCreatedAt();
+        LocalDateTime updateAt = channel.getUpdatedAt();
 
         String createAtDB = getFormattedCreatedAt(fullCreatedAt);
 

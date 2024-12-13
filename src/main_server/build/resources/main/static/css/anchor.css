@@ -301,7 +301,6 @@ table th {
 /* PIE */
 
 #cel_chart_pieChart {
-    width: 100%;
     table-layout: fixed;
 }
 
@@ -379,7 +378,7 @@ table th {
     border-radius: 65536rem;
     margin: 0 auto;
     rotate: 180deg;
-    background: conic-gradient(var(--color_point3) 252deg, rgba(255, 255, 255, 0) 0deg);
+    background: conic-gradient(var(--color_point3) 0deg, rgba(255, 255, 255, 0) 0deg);
 }
 
 #channel-halo {
@@ -622,4 +621,23 @@ table th {
         -webkit-transform: translateY(calc(100% - 8rem));
         transform: translateY(calc(100% - 8rem));
     }
+}
+
+#load-pane {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+}
+
+#load-icon {
+    background-image: url('https://github.com/turbine244/MINT_JAMS/blob/Alpha_1207_new_face/resrc/icons/loading-gif.gif?raw=true');
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    width: 2rem;
+    height: 2rem;
 }

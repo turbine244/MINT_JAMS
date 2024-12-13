@@ -41,7 +41,8 @@
             <table id="tbl_header">
                 <tr>
                     <td class="c1">
-                        <span class="material-symbols-outlined">anchor</span><span class="logo">ANCHOR</span>
+                        <span class="material-symbols-outlined">anchor</span>
+                        <span class="logo" onclick="location.href='/'">ANCHOR</span>
                     </td>
                     <td class="c2">
                         <table>
@@ -58,7 +59,7 @@
                 </tr>
             </table>
 
-            <div id="msg_notify" class="notify-good hide">새로운 분석 결과가 있습니다!<br>페이지를 새로고침해주세요.</div>
+            <div id="msg_notify" class="notify-good hide"></div>
         </div>
 
         <!--SEARCH-->
@@ -99,9 +100,9 @@
                 </table>
             </div>
 
-            <div id="keywords-reference" style="height: 3rem;">
-                <ul id="cel_search_trending" class="keywords-list"></ul>
-                <ul id="cel_search_recent" class="keywords-list hide"></ul>
+            <div id="keywords-reference" style="height: auto;">
+                <table id="cel_search_trending" class="keywords-list"></table>
+                <table id="cel_search_recent" class="keywords-list hide"></table>
             </div>
 
         </div>
@@ -113,7 +114,7 @@
                     <span id="headline-targetname">
                     </span>
                     <span id="headline-follow">
-                        의 분석 결과를 정리했어요
+                        분석 결과를 정리할게요
                     </span>
                 </div>
 
@@ -155,7 +156,11 @@
                     </table>
                 </div>
                 <div id="chart-area">
-                    <div id="cel_chart_wordCloud" class="cel_chart"></div>
+                    <div id="cel_chart_wordCloud" class="cel_chart">
+                        <div id="load-pane">
+                            <div id="load-icon"></div>
+                        </div>
+                    </div>
                     <table id="cel_chart_pieChart" class="cel_chart hide">
                         <tr>
                             <td colspan=2>
@@ -205,15 +210,18 @@
 
                                 <!--감정-->
                                 <td>
-                                    <table>
+                                    <div class="details_head">
+                                        감정 점수 분포
+                                    </div>
+                                    <canvas id="sentiment-graph">
 
-                                    </table>
+                                    </canvas>
                                 </td>
                             </tr>
                             <tr>
                                 <td class="animated-title" colspan="2">
                                     <div class="track_container">
-                                        <div id="content-slide" class="track_text"></div>
+                                        <div id="content-slide" class="track_text">a</div>
                                     </div>
                                 </td>
                             </tr>
@@ -231,7 +239,7 @@
                                 <div id="channel-progress"></div>
                                 <div id="channel-halo"></div>
                                 <div id="channel-image"></div>
-                                <div id="channel-numplate">7/10</div>
+                                <div id="channel-numplate"></div>
                             </div>
 
                         </td>
@@ -244,15 +252,15 @@
                                             open_in_browser
                                         </span>
                                     </th>
-                                    <td id="txt_channel_id">@ABCDEF</td>
+                                    <td id="txt_channel_id"></td>
                                 </tr>
                                 <tr>
                                     <th>최초 발견</th>
-                                    <td id="ymd_found_first">2024/12/12</td>
+                                    <td id="ymd_found_first"></td>
                                 </tr>
                                 <tr>
                                     <th>최근 발견</th>
-                                    <td id="txt_found_last">23시간 59분 전</td>
+                                    <td id="txt_found_last"></td>
                                 </tr>
                             </table>
                         </td>
@@ -289,8 +297,11 @@
 
     <!--MAIN-->
     <script>
-        let data_wordCloud_owning = null;
-        let data_pieChart_owning = null;
+        let pageDate = new Date();
+
+        window.onload = function () {
+            loadKeywords("trending");
+        }
 
         // 페이지 로드 시 초기화
         document.addEventListener("DOMContentLoaded", () => {
@@ -318,7 +329,11 @@
             window.location.href = `/search?channelTitle=${encodeURIComponent(channelTitle)}`;
         }
 
-
+        // 클릭으로 검색
+        function searchChannelClick(target) {
+            // 검색 후 페이지 새로 고침 없이 데이터 로드
+            window.location.href = `/search?channelTitle=${encodeURIComponent(target.replace(/\s/g, ""))}`;
+        }
 
         // 주기적으로 차트만 갱신하는 함수
         function updateCharts() {
@@ -334,7 +349,7 @@
         // URL에서 channelTitle을 가져오기
         const urlParams = new URLSearchParams(window.location.search);
         const channelTitle = urlParams.get('channelTitle');
-        document.getElementById('headline-targetname').innerText = channelTitle;
+        //document.getElementById('headline-targetname').innerText = channelTitle;
 
         if (channelTitle) {
             console.log("Received channelTitle:", channelTitle);
@@ -342,25 +357,20 @@
             searchChannelInfo(channelTitle);
 
             // 일정 간격(예: 5초)으로 차트 갱신 여부 확인
-            setInterval(() => {
-                //updateCharts(channelId);
 
-                const data_wordCloud_new = fetchData("wordcloud", { channelId });
-                const data_pieChart_new = fetchData("wordcloud", { channelId });
+            let c = 0;
+            setInterval(async () => {
+                let channelData = await fetchData("channel", { channelTitle });
+                let updateDate = new Date(channelData.updatedAt);
+                document.getElementById('headline-targetname').innerText = updateDate + ' ' + c;
 
-                if (
-                    ((data_wordCloud_owning != null)
-                        || (data_pieChart_owning != null))
-                    && ((data_wordCloud_owning != data_wordCloud_new)
-                        || (data_pieChart_owning != data_pieChart_new))) {
-
-                    data_wordCloud_owning = data_wordCloud_new;
-                    data_pieChart_owning = data_pieChart_new;
-
+                if (pageDate < updateDate) {
+                    //updateCharts(channelId);
                     notify("새로운 분석 결과가 있습니다!\n페이지를 새로고침해주세요.");
                 }
-
-            }, 5000); // 5000ms = 5초마다 차트 갱신
+                updateDate = null;
+                c++;
+            }, 1000); // 5000ms = 5초마다 차트 갱신 여부 체
 
         } else {
             alert("채널 제목이 없습니다.");
@@ -391,6 +401,7 @@
             showLoading();
             try {
                 const channelData = await fetchData("channel", { channelTitle });
+                document.getElementById('headline-targetname').innerText = channelData.channelTitle;
                 drawChannelCard(channelData);
                 channelId = channelData.channelId; // 여기서 설정됨
                 console.log("Channel ID:", channelId); // 확인용 로그
@@ -425,7 +436,9 @@
                 = "conic-gradient(rgba(48, 131, 248, 100) "
                 + data.updateAnchorNum * unitDeg + "deg, rgba(255, 255, 255, 0) 0deg)";
 
-            document.getElementById('channel-numplate').innerText = data.updateAnchorNum + "/" + cntVid;    // 10/10
+            document.getElementById('channel-numplate').innerText
+                = (data.updateAnchorNum == null ? 0 : data.updateAnchorNum)
+                + "/" + cntVid;    // 10/10
         }
     </script>
 
@@ -605,13 +618,13 @@
                 height: '100%',
                 width: '100%'
             });
+
+            document.getElementById("load-pane").classList.add("hide");
         }
 
         async function loadWordCloud(channelId) {
             const data = await fetchData("wordcloud", { channelId });
             drawWordCloud(data.foundList, data.keyList);
-
-            data_wordCloud_owning = data;
         }
 
 
@@ -622,6 +635,12 @@
         //파이 차트
         let currentPage = 0; // 현재 페이지를 추적
         let pieData = []; // 서버에서 받은 PieDTO 리스트
+
+        let currentVid = '';
+
+        function openLinkTab(link) {
+            window.open(link, '_blank');
+        }
 
         function updatePieChartPage() {
             // 유효하지 않은 데이터 스킵
@@ -652,19 +671,19 @@
             let str = "";
             let clr = "#0xffffff"
 
-            if (final >= 0.6) {
+            if (final >= 0.66) {
                 str = "매우 긍정적(";
                 clr = "#019901";
             }
-            else if (final >= 0.3) {
+            else if (final >= 0.33) {
                 str = "대체로 긍정적(";
                 clr = "#01ff01";
             }
-            else if (final > -0.3) {
+            else if (final > -0.33) {
                 str = "복합적(";
                 clr = "#000000";
             }
-            else if (final > -0.6) {
+            else if (final > -0.66) {
                 str = "대체로 부정적(";
                 clr = "#ff4d4d";
             }
@@ -682,7 +701,17 @@
             document.getElementById("nextButton").disabled = currentPage >= pieData.length - 1;
 
             // 제목 달기
-            document.getElementById("pieContentName").innerText = data.contentId;
+            document.getElementById("pieContentName").innerText = data.contentTitle;
+
+            // 눌러서 링크
+            document.getElementById("pieContentName").removeEventListener("click", () => {
+                openLinkTab(`https://www.youtube.com/watch?v=${currentVid}`);
+            });
+
+            currentVid = data.contentId;
+            document.getElementById("pieContentName").addEventListener("click", () => {
+                openLinkTab(`https://www.youtube.com/watch?v=${currentVid}`);
+            });
         }
 
         function setupNavigationButtons() {
@@ -709,8 +738,14 @@
             const ctx = canvas.getContext("2d");
 
             const colors = [
-                "#d73b50", "#ed701b", "#eed758", "#1cbc9c",
-                "#0990c2", "#626164", "#c8cfd8", "#435274"
+                "#FF6384",
+                "#36A2EB",
+                "#FFCE56",
+                "#4BC0C0",
+                "#9966FF",
+                "#FF9F40",
+                "#3DC17C",
+                "#C764FF"
             ];
             const total = data.reduce((sum, value) => sum + value, 0);
 
@@ -745,7 +780,7 @@
                 colorBox.style.backgroundColor = colors[i % colors.length];
 
                 const legendText = document.createElement("span");
-                legendText.innerText = labels[i] + " (" + ((data[i] / total) * 100).toFixed(2) + "%)";
+                legendText.innerText = labels[i] + " (" + ((data[i] / total) * 100).toFixed(0) + "%)";
 
                 legendItem.appendChild(colorBox);
                 legendItem.appendChild(legendText);
@@ -772,8 +807,6 @@
 
                 console.log("Filtered Pie Data Loaded:", pieData);
 
-                data_pieChart_owning = pieData;
-
                 // 첫 페이지로 초기화
                 currentPage = 0;
                 updatePieChartPage(); // 첫 페이지 차트 그리기
@@ -787,6 +820,15 @@
 
     <!--FDEF : DRAW DETAILS-->
     <script>
+        const xMin = -1;
+        const xMax = 1;
+
+        const graphWidth = canvas.width - 40;
+        const graphHeight = canvas.height - 40;
+        const margin = 20;
+
+        const boundaryPoints = [-0.66, -0.33, 0, 0.33, 0.66];
+
         function drawRankChart(data, labels) {
             const list = document.getElementById('rankChart');
             list.innerHTML = ''; // 기존 내용을 지웁니다.
@@ -810,14 +852,112 @@
                 = channelData.anchorNum;
         }
 
-        async function drawSentimentGraph() {
+        async function getContentTitles() {
+            let parade = document.getElementById("content-slide");
+            parade.innerText = '';
+
             for (let i = 0; i < pieData.length; i++) {
-                pieData[i].sentiment
+                let item = document.createElement('span');
+                let vid = pieData[i].contentId;
+
+                parade.innerText += '#' + pieData[i].contentTitle + ' ';
             }
+        }
+
+        async function drawSentimentGraph() {
+            let canvas_s = document.getElementById("sentiment-graph");
+            let ctx = canvas_s.getContext("2d");
+            const colors = ["#cc0101", 'orange', 'black', 'green', 'blue'];
+
+            // 데이터 구성
+            let sentList = [];
+            let avg = 0;
+
+            for (let i = 0; i < pieData.length; i++) {
+                let temp = pieData[i].sentiment;
+                let temp_nominal = (temp / Math.sqrt((temp * temp) + 15)).toFixed(2);
+
+                avg += temp_nominal;
+                sentList.push(temp_nominal);
+            }
+            avg /= sentList.length;
+
+            // 렌더링
+            ctx.clearRect(0, 0, canvas_s.width, canvas_s.height);  // 이전 내용 지우기
+
+            drawBoundaryLines(canvas_s);  // 경계선 그리기
+            drawDataPoints(sentList);     // 데이터 점 그리기
+        }
+
+        // 그래프의 X축 값을 스케일링 함수
+        function scaleX(value) {
+            return margin + (value - xMin) * (graphWidth / (xMax - xMin));
+        }
+
+        // 경계선 그리기 (회색 점선, -1과 1은 검정 실선)
+        function drawBoundaryLines(cvs) {
+            ctx.setLineDash([5, 5]);  // 점선 스타일
+            ctx.strokeStyle = "#888";  // 기본 경계선 색상
+
+            // -1과 1을 나타내는 경계선 (검정 실선)
+            ctx.beginPath();
+            const xMinPos = scaleX(-1);
+            const xMaxPos = scaleX(1);
+            ctx.moveTo(xMinPos, margin);
+            ctx.lineTo(xMinPos, cvs.height - margin);
+            ctx.moveTo(xMaxPos, margin);
+            ctx.lineTo(xMaxPos, cvs.height - margin);
+            ctx.stroke();
+
+            // 다른 경계선들 (회색 점선)
+            ctx.setLineDash([5, 5]); // 점선 스타일로 설정
+            ctx.strokeStyle = "#888";  // 회색 점선
+            ctx.beginPath();
+            boundaryPoints.forEach(point => {
+                const x = scaleX(point);
+                ctx.moveTo(x, margin);
+                ctx.lineTo(x, cvs.height - margin);
+            });
+            ctx.stroke();
+        }
+
+        // 데이터 점 그리기 (각 구간에 맞는 색상으로)
+        function drawDataPoints(sentdata) {
+
+            const colors = ["#cc0101", "#ff4d4d", "#000000", "#01ff01", "#019901"];
+
+            sentdata.forEach(value => {
+                const x = scaleX(value);
+                const y = canvas_s.height / 2;  // y축은 가운데로 고정
+
+                // 각 데이터가 속한 구간에 해당하는 색상 지정
+                let color = "";
+                if (value <= -0.66) {
+                    color = colors[0];
+                } else if (value <= -0.33) {
+                    color = colors[1];
+                } else if (value <= 0) {
+                    color = colors[2];
+                } else if (value <= 0.33) {
+                    color = colors[3];
+                } else if (value <= 0.66) {
+                    color = colors[4];
+                }
+
+                // 데이터 점 그리기
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
         }
 
         async function loadRankChart(channelId) {
             drawByChannel();
+
+            drawSentimentGraph();
+
+            getContentTitles();
 
             const data1 = await fetchData("ranking", { channelId });
             drawRankChart(data1.foundList, data1.keyList);

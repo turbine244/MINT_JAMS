@@ -301,7 +301,6 @@ table th {
 /* PIE */
 
 #cel_chart_pieChart {
-    width: 100%;
     table-layout: fixed;
 }
 
@@ -641,4 +640,65 @@ table th {
     background-position: center;
     width: 2rem;
     height: 2rem;
+}
+
+.button {
+    display: inline-block;
+    background-color: #e0e0e0;
+    /* 회색 바탕 */
+    color: #333;
+    /* 버튼 텍스트 색 */
+    padding: 10px 20px;
+    /* 버튼 내부 여백 */
+    font-size: 16px;
+    /* 텍스트 크기 */
+    border: 1px solid #ccc;
+    /* 경계선 */
+    border-radius: 8px;
+    /* 모서리를 둥글게 */
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    /* 그림자 */
+    text-align: center;
+    /* 텍스트 가운데 정렬 */
+    cursor: pointer;
+    /* 마우스 커서 모양 */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    /* 전환 효과 */
+}
+
+.nav {
+    display: inline-block;
+    background-color: #e0e0e0;
+    /* 회색 바탕 */
+    color: #333;
+    /* 버튼 텍스트 색 */
+    padding: 0.2rem 0.4rem;
+    /* 버튼 내부 여백 */
+    font-size: 16px;
+    /* 텍스트 크기 */
+    border: 1px solid #ccc;
+    /* 경계선 */
+    border-radius: 8px;
+    /* 모서리를 둥글게 */
+
+    text-align: center;
+    /* 텍스트 가운데 정렬 */
+    cursor: pointer;
+    /* 마우스 커서 모양 */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    /* 전환 효과 */
+}
+
+.nav:hover {
+    background-color: #d6d6d6;
+    /* 호버 시 색상 변경 */
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
+    /* 그림자 확대 */
+}
+
+.nav:active {
+    background-color: #bfbfbf;
+    /* 클릭 시 색상 변경 */
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.3);
+    /* 눌린 효과 */
 }

@@ -8,8 +8,8 @@ spring:
     #    각자 PC에 만들어놓은 Database이름을 써야 합니다.
     url: jdbc:mysql://localhost:3306/mint_jams_dev?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     #    mysql에 생성한 사용자 계정 정보를 써야 합니다.
-    username: root
-    password: 8957
+    username: null /*mysql username*/
+    password: null /*mysql password*/
   thymeleaf:
     cache: false
 
@@ -23,10 +23,7 @@ spring:
 
 api:
   keys: "
-  AIzaSyBOnvoVM2O60KA30ReM-No_OzcvQjjk68w, AIzaSyAlR7JJ-b8yB_oaid6UVJZ_moFgRNW7bXQ, 
-  AIzaSyA5e5_DXFRYXYcfEC-is46rXYXFhw0fTDs, AIzaSyDbowHorDXk6MxNrO87U0wzefb5WtrAf5g,
-  AIzaSyAqyI0N2Q-UU0OILXZO7NvM_KBjmi4Wujk, AIzaSyBHdAKzj-NhKqOSbR5fdTOpeolCmDDISsM,
-  AIzaSyDFE7aU1PtVcZAuTotmuKu9H0oXNA_OSxY, AIzaSyAP8MvJKjA_zDzDlOpo28tqlcjjlsvaSoQ,
-  AIzaSyAGipR-_mxfFhDvxP2mnoRPmzO5P8L72fM, AIzaSyB-VdmjIivHMVISNT4rt9yPm6ZKGCK2hSE,
-  AIzaSyAjoANf6NUmYwHAk-66hN56sagIiLY63qc, AIzaSyDqybImooWQNMK7CGlyLShAls4VPaBL5sw 
+  AIzaSyBOnvoVM2O60KA30ReM-No_OzcvQjjk68w,
+  AIzaSyAlR7JJ-b8yB_oaid6UVJZ_moFgRNW7bXQ,
+  AIzaSyA5e5_DXFRYXYcfEC-is46rXYXFhw0fTDs
   "

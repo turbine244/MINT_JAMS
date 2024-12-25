@@ -1,7 +1,7 @@
 # MintJamsDev
 
 분석 기능은 파이썬으로 작성된 Flask 서버가 수행하며
-종속된 패키지의 설치 명령어는 아래와 같음(총 40줄)
+종속된 패키지의 설치 명령어는 아래와 같음(총 40개)
 
 pip install beautifulsoup4==4.12.3
 pip install blinker==1.8.2
